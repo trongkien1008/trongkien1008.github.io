@@ -468,6 +468,7 @@ a.active {
 
 #projects {
     padding: 100px 0;
+    background: #f3f3f3
 }
 
 .portfolio .categories-grid span {
@@ -651,7 +652,7 @@ a.active {
 
 #contact {
     padding: 100px 0;
-    background: #f3f3f3
+    /* background: #f3f3f3 */
 }
 
 #contact-form input,
