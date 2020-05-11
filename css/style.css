@@ -30,7 +30,6 @@
 font-family: 'Playfair Display', serif;
 font-family: 'Lato', sans-serif;
 font-family: 'Open Sans', sans-serif;
-*/
 
 
 /* typography
@@ -50,6 +49,7 @@ h4 {
     color: #425BB5;
     margin-left: 40px;
     font-weight: 700;
+    font-size: 2em;
 }
 
 h4:before {
@@ -58,7 +58,7 @@ h4:before {
     left: -40px;
     content: "";
     display: block;
-    height: 2px;
+    height: 4px;
     background: #425BB5;
     top: 9px;
 }
@@ -73,10 +73,28 @@ body {
     line-height: 24px;
 }
 
+.shadow-{
+    text-shadow: 2px 2px 1px azure;
+}
+.myname{
+    color: #fff !important;
+}
+.myname:before {
+    position: absolute;
+    width: 30px;
+    left: -40px;
+    content: "";
+    display: block;
+    height: 4px;
+    background: #fff;
+    top: 9px;
+}
+
 .size-50 {
     font-size: 50px;
     line-height: 50px
 }
+
 
 .h-50 {
     height: 50px;
@@ -800,3 +818,4 @@ fieldset {
         font-size: 10px;
     }
 }
+
