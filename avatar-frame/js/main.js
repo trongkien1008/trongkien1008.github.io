@@ -17,7 +17,7 @@ $(document).ready(function () {
     var output_name = rand_string(5)+'YTC-avatar.png';
     
         var text = { 'frames' : [
-		{'name':'Merry Christmas - YTC', 'src' :'uploads/ytc-noel.png'}, 
+		{'name':'Chúc mừng năm mới - A. Yersin', 'src' :'uploads/ayersin.png'}, 
 		
 	    ]};
 
