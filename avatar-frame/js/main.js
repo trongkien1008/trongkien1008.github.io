@@ -14,7 +14,7 @@ $(document).ready(function () {
     var scaleX = 0.5;
     var scaleY = 0.5;
     var output_size = 1024; // px
-    var output_name = rand_string(5)+'YTC-avatar.png';
+    var output_name = rand_string(5)+'-avatar.png';
     
         var text = { 'frames' : [
 		{'name':'Chúc mừng năm mới - A. Yersin', 'src' :'uploads/2avatar.png'}, 
