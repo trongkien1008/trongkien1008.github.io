@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chuyển đổi WebP Hàng Loạt</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 900px; margin: 30px auto; padding: 20px; color: #333; }
+        h2 { text-align: center; }
+        .control-panel { background: #f8f9fa; border: 2px dashed #007bff; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
+        input[type="file"] { font-size: 16px; margin-bottom: 20px; }
+        .slider-container { margin: 15px 0; font-weight: bold; }
+        input[type="range"] { width: 50%; margin-top: 10px; }
+        
+        /* Bảng danh sách ảnh */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; display: none; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; vertical-align: middle; }
+        th { background-color: #007bff; color: white; }
+        .preview-img { max-width: 80px; max-height: 80px; border-radius: 4px; }
+        
+        /* Nút bấm */
+        .btn { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; text-decoration: none; display: inline-block; font-size: 14px; }
+        .btn:hover { background: #0056b3; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #218838; }
+        
+        #downloadAllBtn { display: none; margin: 20px auto; font-size: 16px; padding: 12px 24px; }
+        .stats { color: #28a745; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h2>Công cụ nén & chuyển WebP Hàng Loạt</h2>
+    
+    <div class="control-panel">
+        <!-- Thêm thuộc tính multiple để cho phép chọn nhiều file -->
+        <input type="file" id="fileInput" accept="image/jpeg, image/png, image/jpg" multiple>
+        
+        <div class="slider-container">
+            <label>Chất lượng ảnh: <span id="qualityVal">80</span>%</label><br>
+            <input type="range" id="quality" min="0.1" max="1" step="0.05" value="0.8">
+        </div>
+        
+        <button id="downloadAllBtn" class="btn btn-success">⬇ Tải toàn bộ ảnh WebP</button>
+    </div>
+
+    <table id="resultTable">
+        <thead>
+            <tr>
+                <th>Ảnh</th>
+                <th>Tên file gốc</th>
+                <th>Dung lượng gốc</th>
+                <th>Dung lượng WebP</th>
+                <th>Tối ưu</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody id="resultBody">
+            <!-- Dữ liệu ảnh sẽ được thêm vào đây -->
+        </tbody>
+    </table>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const qualityInput = document.getElementById('quality');
+        const qualityVal = document.getElementById('qualityVal');
+        const resultTable = document.getElementById('resultTable');
+        const resultBody = document.getElementById('resultBody');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+
+        // Danh sách lưu trữ các link tải xuống
+        let downloadLinks = [];
+
+        // Cập nhật giá trị hiển thị %
+        qualityInput.addEventListener('input', (e) => {
+            qualityVal.textContent = Math.round(e.target.value * 100);
+            // Nếu đổi chất lượng mà đã có file thì yêu cầu chọn lại để render lại
+            if (resultBody.innerHTML !== '') {
+                alert('Bạn vừa đổi chất lượng. Vui lòng chọn lại ảnh để áp dụng mức chất lượng mới nhé!');
+            }
+        });
+
+        // Hàm format dung lượng (Bytes sang KB/MB)
+        function formatSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Xử lý khi chọn nhiều file
+        fileInput.addEventListener('change', async function(e) {
+            const files = e.target.files;
+            if (files.length === 0) return;
+
+            // Reset dữ liệu cũ
+            resultBody.innerHTML = '';
+            downloadLinks = [];
+            resultTable.style.display = 'table';
+            downloadAllBtn.style.display = 'inline-block';
+            
+            const quality = parseFloat(qualityInput.value);
+
+            // Duyệt qua từng file đã chọn
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                
+                // Lấy tên file mới (.webp)
+                const newFileName = file.name.substring(0, file.name.lastIndexOf('.')) + '.webp';
+                const originalSize = file.size;
+
+                // Dùng FileReader để đọc ảnh
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        // Vẽ ra Canvas
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        
+                        // Chuyển canvas thành Blob WebP (tối ưu RAM hơn so với Base64 cho nhiều file)
+                        canvas.toBlob(function(blob) {
+                            const newSize = blob.size;
+                            const savedPercent = ((originalSize - newSize) / originalSize * 100).toFixed(1);
+                            
+                            // Tạo link tạm thời để tải
+                            const webpUrl = URL.createObjectURL(blob);
+                            downloadLinks.push({ url: webpUrl, name: newFileName });
+
+                            // Tạo dòng mới trong bảng
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td><img src="${webpUrl}" class="preview-img"></td>
+                                <td>${file.name}</td>
+                                <td>${formatSize(originalSize)}</td>
+                                <td>${formatSize(newSize)}</td>
+                                <td class="stats">-${savedPercent}%</td>
+                                <td>
+                                    <a href="${webpUrl}" download="${newFileName}" class="btn">Tải ảnh này</a>
+                                </td>
+                            `;
+                            resultBody.appendChild(tr);
+
+                        }, 'image/webp', quality);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Xử lý khi bấm nút "Tải toàn bộ"
+        downloadAllBtn.addEventListener('click', () => {
+            if (downloadLinks.length === 0) return;
+            
+            // Tải từng file với độ trễ nhỏ để trình duyệt không chặn (Block popup)
+            downloadLinks.forEach((item, index) => {
+                setTimeout(() => {
+                    const link = document.createElement('a');
+                    link.href = item.url;
+                    link.download = item.name;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }, index * 300); // Cách nhau 0.3 giây mỗi lần tải
+            });
+        });
+    </script>
+</body>
+</html>
