@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công cụ Đóng Dấu Bản Quyền Hàng Loạt</title>
+    <!-- Tailwind CSS cho giao diện hiện đại -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- JSZip để nén file -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        /* Tùy chỉnh thanh cuộn cho đẹp hơn */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Hiệu ứng mờ khi đang tải */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 50;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px; height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen">
+
+    <!-- OVERLAY ĐANG XỬ LÝ -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner mb-4"></div>
+        <h2 class="text-xl font-semibold text-blue-600" id="loadingText">Đang xử lý ảnh...</h2>
+    </div>
+
+    <div class="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- HEADER -->
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">Đóng Dấu Bản Quyền Hàng Loạt</h1>
+            <p class="text-gray-500">Thêm logo vào nhiều ảnh cùng lúc, xử lý 100% trên trình duyệt của bạn.</p>
+        </header>
+
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- CỘT TRÁI: ĐIỀU KHIỂN -->
+            <div class="w-full lg:w-1/3 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-6 h-fit">
+                
+                <!-- Chọn ảnh gốc -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">1. Chọn ảnh gốc (Nhiều ảnh)</label>
+                    <input type="file" id="baseImagesInput" multiple accept="image/*" class="block w-full text-sm text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-full file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-blue-50 file:text-blue-700
+                        hover:file:bg-blue-100 cursor-pointer border rounded-lg p-2
+                    "/>
+                    <p id="imageCount" class="text-xs text-gray-500 mt-2">Chưa chọn ảnh nào.</p>
+                </div>
+
+                <!-- Chọn Logo -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">2. Chọn Logo Watermark</label>
+                    <input type="file" id="watermarkInput" accept="image/png, image/jpeg, image/svg+xml" class="block w-full text-sm text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-full file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-purple-50 file:text-purple-700
+                        hover:file:bg-purple-100 cursor-pointer border rounded-lg p-2
+                    "/>
+                </div>
+
+                <hr class="border-gray-100">
+
+                <!-- Cài đặt Watermark -->
+                <div class="flex flex-col gap-4">
+                    <h3 class="text-lg font-semibold text-gray-800">3. Tùy chỉnh Watermark</h3>
+                    
+                    <!-- Kích thước -->
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <label class="text-sm font-medium text-gray-700">Kích thước (Scale)</label>
+                            <span id="scaleVal" class="text-sm text-gray-500">20%</span>
+                        </div>
+                        <input type="range" id="scaleInput" min="5" max="100" value="20" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                        <p class="text-xs text-gray-400 mt-1">Tỷ lệ so với chiều rộng ảnh gốc</p>
+                    </div>
+
+                    <!-- Độ trong suốt -->
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <label class="text-sm font-medium text-gray-700">Độ trong suốt (Opacity)</label>
+                            <span id="opacityVal" class="text-sm text-gray-500">70%</span>
+                        </div>
+                        <input type="range" id="opacityInput" min="10" max="100" value="70" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                    </div>
+
+                    <!-- Vị trí -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Vị trí</label>
+                        <select id="positionInput" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 outline-none">
+                            <option value="bottom-right" selected>Góc dưới - Phải</option>
+                            <option value="bottom-left">Góc dưới - Trái</option>
+                            <option value="bottom-center">Dưới cùng - Giữa</option>
+                            <option value="top-right">Góc trên - Phải</option>
+                            <option value="top-left">Góc trên - Trái</option>
+                            <option value="top-center">Trên cùng - Giữa</option>
+                            <option value="center">Chính giữa</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Nút Xử lý -->
+                <button id="processBtn" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    Áp dụng & Tải Zip
+                </button>
+            </div>
+
+            <!-- CỘT PHẢI: PREVIEW -->
+            <div class="w-full lg:w-2/3 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center justify-between">
+                    <span>Xem trước (Preview)</span>
+                    <span class="text-xs font-normal bg-green-100 text-green-700 px-2 py-1 rounded-md">Live Update</span>
+                </h3>
+                
+                <div class="flex-1 bg-gray-100 rounded-xl overflow-hidden flex justify-center items-center relative border border-dashed border-gray-300 min-h-[400px]">
+                    <!-- Canvas để vẽ preview -->
+                    <canvas id="previewCanvas" class="max-w-full max-h-[600px] object-contain shadow-sm hidden"></canvas>
+                    
+                    <!-- Placeholder khi chưa có ảnh -->
+                    <div id="previewPlaceholder" class="text-center text-gray-400 p-8">
+                        <svg class="mx-auto h-12 w-12 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <p>Vui lòng chọn ít nhất 1 ảnh gốc và 1 logo để xem trước.</p>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-3 text-center">Bản xem trước hiển thị trên ảnh đầu tiên của danh sách.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT LOGIC -->
+    <script>
+        // DOM Elements
+        const baseImagesInput = document.getElementById('baseImagesInput');
+        const watermarkInput = document.getElementById('watermarkInput');
+        const imageCountDisplay = document.getElementById('imageCount');
+        
+        const scaleInput = document.getElementById('scaleInput');
+        const scaleVal = document.getElementById('scaleVal');
+        const opacityInput = document.getElementById('opacityInput');
+        const opacityVal = document.getElementById('opacityVal');
+        const positionInput = document.getElementById('positionInput');
+        
+        const previewCanvas = document.getElementById('previewCanvas');
+        const previewPlaceholder = document.getElementById('previewPlaceholder');
+        const processBtn = document.getElementById('processBtn');
+        
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+
+        // State
+        let baseFiles = [];
+        let firstBaseImage = null; // Lưu cache Image object của ảnh đầu tiên cho preview nhanh
+        let watermarkImage = null; // Lưu cache Image object của logo
+
+        // --- Helper Functions ---
+        
+        // Đọc File thành HTMLImageElement
+        const fileToImage = (file) => {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = URL.createObjectURL(file);
+            });
+        };
+
+        // Hàm vẽ watermark lên một context
+        const drawWatermark = (ctx, baseWidth, baseHeight, scale, opacity, position) => {
+            if (!watermarkImage) return;
+
+            // Kích thước Watermark dựa trên tỷ lệ % chiều rộng ảnh gốc
+            const wmWidth = baseWidth * (scale / 100);
+            const wmHeight = watermarkImage.height * (wmWidth / watermarkImage.width);
+
+            // Padding (khoảng cách từ viền)
+            const padding = Math.max(20, baseWidth * 0.02); 
+
+            let x = 0, y = 0;
+
+            switch (position) {
+                case 'top-left':
+                    x = padding; y = padding;
+                    break;
+                case 'top-right':
+                    x = baseWidth - wmWidth - padding; y = padding;
+                    break;
+                case 'top-center':
+                    x = (baseWidth - wmWidth) / 2; y = padding;
+                    break;
+                case 'bottom-left':
+                    x = padding; y = baseHeight - wmHeight - padding;
+                    break;
+                case 'bottom-right':
+                    x = baseWidth - wmWidth - padding; y = baseHeight - wmHeight - padding;
+                    break;
+                case 'bottom-center':
+                    x = (baseWidth - wmWidth) / 2; y = baseHeight - wmHeight - padding;
+                    break;
+                case 'center':
+                    x = (baseWidth - wmWidth) / 2; y = (baseHeight - wmHeight) / 2;
+                    break;
+            }
+
+            // Vẽ
+            ctx.globalAlpha = opacity / 100;
+            ctx.drawImage(watermarkImage, x, y, wmWidth, wmHeight);
+            ctx.globalAlpha = 1.0; // Reset
+        };
+
+        // Hàm cập nhật vùng Preview
+        const updatePreview = () => {
+            if (firstBaseImage && watermarkImage) {
+                previewPlaceholder.style.display = 'none';
+                previewCanvas.style.display = 'block';
+
+                const ctx = previewCanvas.getContext('2d');
+                
+                // Thiết lập kích thước canvas bằng kích thước ảnh thật
+                previewCanvas.width = firstBaseImage.width;
+                previewCanvas.height = firstBaseImage.height;
+
+                // Xóa canvas
+                ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+
+                // Vẽ ảnh gốc
+                ctx.drawImage(firstBaseImage, 0, 0);
+
+                // Lấy thông số cấu hình
+                const scale = parseInt(scaleInput.value);
+                const opacity = parseInt(opacityInput.value);
+                const position = positionInput.value;
+
+                // Vẽ watermark
+                drawWatermark(ctx, previewCanvas.width, previewCanvas.height, scale, opacity, position);
+            } else {
+                previewPlaceholder.style.display = 'block';
+                previewCanvas.style.display = 'none';
+            }
+        };
+
+        // --- Event Listeners ---
+
+        // Khi chọn ảnh gốc
+        baseImagesInput.addEventListener('change', async (e) => {
+            baseFiles = Array.from(e.target.files);
+            imageCountDisplay.textContent = baseFiles.length > 0 ? `Đã chọn ${baseFiles.length} ảnh.` : 'Chưa chọn ảnh nào.';
+            
+            if (baseFiles.length > 0) {
+                // Load ảnh đầu tiên để preview
+                try {
+                    firstBaseImage = await fileToImage(baseFiles[0]);
+                    updatePreview();
+                } catch (err) {
+                    console.error("Lỗi tải ảnh base:", err);
+                    alert("Không thể đọc ảnh đầu tiên. Vui lòng thử ảnh khác.");
+                }
+            } else {
+                firstBaseImage = null;
+                updatePreview();
+            }
+        });
+
+        // Khi chọn ảnh Logo
+        watermarkInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                try {
+                    watermarkImage = await fileToImage(file);
+                    updatePreview();
+                } catch (err) {
+                    console.error("Lỗi tải logo:", err);
+                    alert("Không thể đọc file logo.");
+                }
+            } else {
+                watermarkImage = null;
+                updatePreview();
+            }
+        });
+
+        // Cập nhật UI Slider & Preview liên tục khi kéo
+        scaleInput.addEventListener('input', (e) => {
+            scaleVal.textContent = e.target.value + '%';
+            updatePreview();
+        });
+
+        opacityInput.addEventListener('input', (e) => {
+            opacityVal.textContent = e.target.value + '%';
+            updatePreview();
+        });
+
+        positionInput.addEventListener('change', updatePreview);
+
+
+        // --- BATCH PROCESSING LOGIC ---
+        processBtn.addEventListener('click', async () => {
+            if (baseFiles.length === 0) {
+                alert("Vui lòng chọn ít nhất 1 ảnh gốc!");
+                return;
+            }
+            if (!watermarkImage) {
+                alert("Vui lòng chọn ảnh logo để làm watermark!");
+                return;
+            }
+
+            // Hiện màn hình loading
+            loadingOverlay.style.display = 'flex';
+            
+            try {
+                const zip = new JSZip();
+                const folder = zip.folder("Watermarked_Images");
+                
+                const scale = parseInt(scaleInput.value);
+                const opacity = parseInt(opacityInput.value);
+                const position = positionInput.value;
+
+                // Canvas phụ để xử lý ngầm (Offscreen Canvas nếu muốn tối ưu, nhưng thẻ canvas ẩn cũng hoạt động tốt)
+                const workCanvas = document.createElement('canvas');
+                const workCtx = workCanvas.getContext('2d');
+
+                for (let i = 0; i < baseFiles.length; i++) {
+                    const file = baseFiles[i];
+                    loadingText.textContent = `Đang xử lý: ${i + 1} / ${baseFiles.length}...`;
+                    
+                    // 1. Tải ảnh
+                    const img = await fileToImage(file);
+                    
+                    // 2. Setup canvas
+                    workCanvas.width = img.width;
+                    workCanvas.height = img.height;
+                    
+                    // 3. Vẽ ảnh gốc
+                    workCtx.drawImage(img, 0, 0);
+                    
+                    // 4. Vẽ Watermark
+                    drawWatermark(workCtx, workCanvas.width, workCanvas.height, scale, opacity, position);
+                    
+                    // 5. Chuyển canvas thành Blob (dùng callback, nên gói vào Promise)
+                    const blob = await new Promise(resolve => {
+                        // Trích xuất định dạng gốc nếu có thể, mặc định là jpeg để nén tốt
+                        let format = 'image/jpeg';
+                        if(file.type === 'image/png') format = 'image/png';
+                        
+                        workCanvas.toBlob((b) => resolve(b), format, 0.9); 
+                    });
+
+                    // 6. Thêm vào Zip
+                    // Tạo tên file mới tránh trùng
+                    const ext = file.name.split('.').pop();
+                    const nameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'));
+                    folder.file(`${nameWithoutExt}_watermarked.${ext}`, blob);
+                }
+
+                loadingText.textContent = "Đang nén file Zip...";
+                
+                // 7. Tạo file ZIP
+                const zipContent = await zip.generateAsync({type: "blob"});
+                
+                // 8. Tự động tải xuống
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(zipContent);
+                link.download = "Images_Watermarked.zip";
+                link.click();
+                
+                // Dọn dẹp bộ nhớ URL (tùy chọn nhưng tốt)
+                URL.revokeObjectURL(link.href);
+
+            } catch (error) {
+                console.error("Lỗi trong quá trình xử lý:", error);
+                alert("Đã xảy ra lỗi trong quá trình xử lý ảnh. Vui lòng xem console để biết thêm chi tiết.");
+            } finally {
+                // Ẩn màn hình loading
+                loadingOverlay.style.display = 'none';
+                loadingText.textContent = "Đang xử lý ảnh..."; // reset text
+            }
+        });
+
+    </script>
+</body>
+</html>
