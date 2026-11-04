@@ -1,0 +1,2128 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Bản đồ số Đại học Nha Trang — NTU Digital Campus Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root{
+  --bg:#dfe6da;
+  --panel:rgba(252,252,249,0.96);
+  --panel-solid:#fcfcf9;
+  --surface:#f1f4ec;
+  --ink:#1b2821;
+  --muted:#56665b;
+  --line:#cbd4c4;
+  --accent:#1f6f50;
+  --accent-soft:#dcfce7;
+  --accent-ink:#ffffff;
+  --frame:#223127;
+  --highlight:#f59e0b;
+  --font-display:'Bricolage Grotesque','Be Vietnam Pro',system-ui,sans-serif;
+  --font-body:'Be Vietnam Pro',system-ui,-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1713;
+    --panel:rgba(24,34,29,0.95);
+    --panel-solid:#18221d;
+    --surface:#212f28;
+    --ink:#e7f0ea;
+    --muted:#95a89c;
+    --line:#2e3f36;
+    --accent:#4ade80;
+    --accent-soft:#143826;
+    --accent-ink:#091810;
+    --frame:#090e0b;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1713;
+  --panel:rgba(24,34,29,0.95);
+  --panel-solid:#18221d;
+  --surface:#212f28;
+  --ink:#e7f0ea;
+  --muted:#95a89c;
+  --line:#2e3f36;
+  --accent:#4ade80;
+  --accent-soft:#143826;
+  --accent-ink:#091810;
+  --frame:#090e0b;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{
+  margin:0;padding:0;width:100%;height:100%;overflow:hidden;
+  background:var(--bg);color:var(--ink);font:14px/1.5 var(--font-body);
+  touch-action:none;user-select:none;
+}
+
+/* Fullscreen Map Viewport */
+.app-shell{
+  position:relative;width:100vw;height:100dvh;overflow:hidden;
+  display:flex;flex-direction:column;
+}
+
+.map-viewport{
+  position:absolute;inset:0;overflow:hidden;background:#e4e1d4;
+  cursor:grab;touch-action:none;
+}
+.map-viewport.dragging{cursor:grabbing}
+
+/* Transform container for Pan & Zoom */
+.map-stage{
+  position:absolute;left:0;top:0;
+  width:448px;height:392px;
+  transform-origin:0 0;
+  will-change:transform;
+  border:3px solid var(--frame);
+  box-shadow:0 16px 48px rgba(0,0,0,0.22);
+  background:#ebe8dd;
+}
+canvas#cv{
+  display:block;width:448px;height:392px;
+  image-rendering:pixelated;outline:none;
+}
+
+/* Interactive Pins on Map */
+.pin{
+  position:absolute;transform:translate(-50%,-50%);
+  white-space:nowrap;background:rgba(255,255,250,0.94);color:#1a261f;
+  border:1px solid #223127;border-radius:3px;
+  padding:0 3.5px;font:700 5.6px/1.4 var(--font-body);
+  cursor:pointer;transition:transform .12s,background .15s,opacity .15s;
+  z-index:3;box-shadow:0 1px 2px rgba(0,0,0,0.2);
+}
+.pin:hover{transform:translate(-50%,-50%) scale(1.15);z-index:8;background:#fff}
+.pin.lm{font-size:6.2px;padding:0.5px 4.5px;border-width:1.2px}
+.pin.gate-pin{background:#fef3c7;color:#78350f;border-color:#b45309}
+.pin.ndn-pin{background:#fee2e2;color:#7f1d1d;border-color:#991b1b}
+.pin.on{
+  background:#ffd35a!important;color:#111!important;
+  border-color:#111!important;z-index:10;
+  transform:translate(-50%,-50%) scale(1.22);
+  box-shadow:0 2px 6px rgba(0,0,0,0.35);
+}
+.pin.dim{opacity:0.18;pointer-events:none}
+
+/* Street & Sea Labels on Map */
+.st{
+  position:absolute;white-space:nowrap;pointer-events:none;
+  font:700 5.5px/1 var(--font-body);color:#2d3338;letter-spacing:.03em;z-index:2;
+  text-shadow:0 0 2px rgba(255,255,255,0.8);
+}
+.st.sea{color:#f0f9ff;font-size:7.5px;letter-spacing:.22em;text-shadow:0 1px 2px rgba(0,50,90,0.6)}
+
+/* Floating Top Bar (Search + Filter Chips) */
+.top-overlay{
+  position:fixed;
+  top:max(10px,env(safe-area-inset-top,10px));
+  left:max(10px,env(safe-area-inset-left,10px));
+  right:max(10px,env(safe-area-inset-right,10px));
+  z-index:30;pointer-events:none;
+  display:flex;flex-direction:column;gap:8px;
+  max-width:780px;
+}
+.search-bar{
+  pointer-events:auto;
+  display:flex;align-items:center;gap:8px;
+  background:var(--panel);backdrop-filter:blur(12px);
+  border:1.5px solid var(--line);border-radius:14px;
+  padding:7px 10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);
+}
+.brand-badge{
+  display:flex;align-items:center;gap:6px;
+  background:var(--accent);color:var(--accent-ink);
+  font:800 13px/1 var(--font-display);
+  padding:7px 10px;border-radius:9px;white-space:nowrap;
+}
+.search-input-wrap{
+  position:relative;flex:1;display:flex;align-items:center;min-width:0;
+}
+#q{
+  width:100%;border:0;background:transparent;color:var(--ink);
+  font:500 14px var(--font-body);padding:4px 26px 4px 6px;outline:none;
+}
+#q::placeholder{color:var(--muted)}
+.clear-search{
+  position:absolute;right:2px;border:0;background:var(--surface);color:var(--muted);
+  width:22px;height:22px;border-radius:50%;font-size:12px;cursor:pointer;
+  display:none;place-items:center;
+}
+.clear-search.show{display:grid}
+
+.top-btn{
+  border:1.5px solid var(--line);background:var(--surface);color:var(--ink);
+  font:600 12.5px var(--font-body);padding:7px 11px;border-radius:10px;
+  cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;
+  transition:border-color .15s,background .15s;
+}
+.top-btn:hover{border-color:var(--accent)}
+.top-btn.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* Filter Chips Row */
+.chips-scroll{
+  pointer-events:auto;
+  display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;
+  scrollbar-width:none;-ms-overflow-style:none;
+}
+.chips-scroll::-webkit-scrollbar{display:none}
+.chip{
+  border:1.5px solid var(--line);background:var(--panel);backdrop-filter:blur(8px);
+  color:var(--ink);font:600 12px/1 var(--font-body);padding:6px 12px;
+  border-radius:99px;cursor:pointer;white-space:nowrap;
+  box-shadow:0 2px 8px rgba(0,0,0,0.08);transition:all .15s;
+}
+.chip[aria-pressed="true"]{
+  background:var(--accent);color:var(--accent-ink);border-color:var(--accent);
+}
+
+/* Floating Arrival Toast Banner */
+.arrival-banner{
+  position:fixed;left:50%;top:112px;transform:translateX(-50%);
+  background:rgba(24,34,29,0.94);color:#fff;border:1.5px solid #ffd35a;
+  padding:8px 14px;border-radius:99px;z-index:28;
+  display:flex;align-items:center;gap:10px;
+  font:600 13px/1.2 var(--font-body);
+  box-shadow:0 8px 24px rgba(0,0,0,0.28);
+  max-width:92vw;white-space:nowrap;
+}
+.arrival-banner[hidden]{display:none!important}
+.arrival-banner button{
+  border:0;background:#ffd35a;color:#141b17;font:700 12px/1 var(--font-body);
+  padding:6px 11px;border-radius:99px;cursor:pointer;
+}
+
+/* Right-side Map Controls (Zoom, Reset, Follow, Theme) */
+.map-tools{
+  position:fixed;
+  right:max(12px,env(safe-area-inset-right,12px));
+  top:50%;transform:translateY(-50%);
+  z-index:25;display:flex;flex-direction:column;gap:7px;
+}
+.tool-btn{
+  width:42px;height:42px;border-radius:12px;
+  border:1.5px solid var(--line);background:var(--panel);backdrop-filter:blur(10px);
+  color:var(--ink);font-size:17px;font-weight:700;cursor:pointer;
+  display:grid;place-items:center;box-shadow:0 4px 14px rgba(0,0,0,0.12);
+  transition:transform .1s,border-color .15s;
+}
+.tool-btn:hover{border-color:var(--accent);transform:scale(1.04)}
+.tool-btn:active{transform:scale(0.95)}
+.tool-btn.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* Virtual D-Pad for Character Walking (Bottom-Left) */
+.dpad-box{
+  position:fixed;
+  left:max(12px,env(safe-area-inset-left,12px));
+  bottom:max(16px,env(safe-area-inset-bottom,16px));
+  z-index:25;display:flex;flex-direction:column;gap:6px;
+}
+.dpad{
+  display:grid;grid-template-columns:repeat(3,42px);grid-template-rows:repeat(2,42px);gap:5px;
+}
+.dpad button{
+  border:1.5px solid var(--line);background:var(--panel);backdrop-filter:blur(8px);
+  color:var(--ink);font-size:16px;font-weight:700;border-radius:10px;
+  cursor:pointer;touch-action:none;box-shadow:0 4px 12px rgba(0,0,0,0.14);
+}
+.dpad button:active{background:var(--accent);color:var(--accent-ink)}
+.dpad .u{grid-column:2;grid-row:1}
+.dpad .l{grid-column:1;grid-row:2}
+.dpad .d{grid-column:2;grid-row:2}
+.dpad .r{grid-column:3;grid-row:2}
+.walk-hint{
+  font-size:11px;color:var(--muted);background:var(--panel);
+  padding:3px 8px;border-radius:6px;border:1px solid var(--line);
+  text-align:center;
+}
+
+/* Directory Drawer (All 38 Places List) */
+.directory-drawer{
+  position:fixed;
+  top:112px;
+  left:max(10px,env(safe-area-inset-left,10px));
+  bottom:max(16px,env(safe-area-inset-bottom,16px));
+  width:min(360px,calc(100vw - 20px));
+  background:var(--panel);backdrop-filter:blur(14px);
+  border:1.5px solid var(--line);border-radius:16px;
+  box-shadow:0 16px 40px rgba(0,0,0,0.22);
+  z-index:35;display:flex;flex-direction:column;overflow:hidden;
+  transition:transform .22s ease,opacity .22s ease;
+}
+.directory-drawer[hidden]{display:none!important}
+.drawer-header{
+  padding:12px 14px;border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.drawer-header h3{margin:0;font:700 15px var(--font-display)}
+.place-list{
+  list-style:none;margin:0;padding:8px;overflow-y:auto;flex:1;
+  display:grid;gap:4px;user-select:text;
+}
+.place-item-btn{
+  width:100%;text-align:left;border:1px solid transparent;
+  background:transparent;color:var(--ink);padding:8px 10px;
+  border-radius:10px;cursor:pointer;
+  display:grid;grid-template-columns:56px 1fr auto;gap:8px;align-items:center;
+}
+.place-item-btn:hover{background:var(--surface)}
+.place-item-btn[aria-current="true"]{
+  background:var(--accent-soft);border-color:var(--accent);
+}
+.place-code{
+  font:700 11px/1.2 var(--font-mono);background:var(--surface);
+  color:var(--ink);padding:4px 6px;border-radius:6px;text-align:center;
+  border:1px solid var(--line);
+}
+.place-meta{min-width:0}
+.place-meta strong{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.place-meta small{display:block;color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.floor-pill-sm{
+  font:600 11px var(--font-mono);color:var(--accent);
+  background:var(--surface);padding:2px 7px;border-radius:99px;white-space:nowrap;
+}
+
+/* Detailed Building Info Sheet (Desktop Right Panel / Mobile Bottom Sheet) */
+.info-sheet{
+  position:fixed;
+  right:max(12px,env(safe-area-inset-right,12px));
+  bottom:max(12px,env(safe-area-inset-bottom,12px));
+  width:min(430px,calc(100vw - 24px));
+  max-height:calc(100dvh - 130px);
+  background:var(--panel);backdrop-filter:blur(16px);
+  border:1.5px solid var(--line);border-radius:18px;
+  box-shadow:0 16px 48px rgba(0,0,0,0.26);
+  z-index:40;display:flex;flex-direction:column;overflow:hidden;
+  user-select:text;transition:transform .25s cubic-bezier(.2,.8,.2,1);
+}
+.info-sheet[hidden]{display:none!important}
+.sheet-drag-handle{
+  width:42px;height:5px;background:var(--line);border-radius:99px;
+  margin:8px auto 2px;cursor:pointer;display:none;
+}
+.sheet-header{
+  padding:14px 16px 10px;border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:flex-start;gap:10px;
+}
+.badge-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.b-tag{
+  font:700 11px/1 var(--font-mono);text-transform:uppercase;
+  padding:4px 8px;border-radius:6px;background:var(--accent);color:var(--accent-ink);
+}
+.b-tag.floors{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.b-tag.hours{background:#fef3c7;color:#78350f;border:1px solid #f59e0b}
+
+.sheet-title{font:800 20px/1.2 var(--font-display);margin:0}
+.close-sheet-btn{
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  width:32px;height:32px;border-radius:9px;font-size:15px;cursor:pointer;flex-shrink:0;
+}
+
+.sheet-body{
+  padding:12px 16px 16px;overflow-y:auto;flex:1;
+  display:flex;flex-direction:column;gap:12px;
+}
+.sheet-desc{margin:0;color:var(--muted);font-size:13.5px}
+
+/* Action Buttons inside Info Sheet */
+.sheet-actions{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+}
+.btn-sheet{
+  border:1.5px solid var(--line);background:var(--surface);color:var(--ink);
+  font:700 13px/1.2 var(--font-body);padding:9px 12px;border-radius:10px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn-sheet.primary{
+  background:var(--accent);color:var(--accent-ink);border-color:var(--accent);
+}
+.btn-sheet:hover{filter:brightness(1.05)}
+
+/* Floor Selector & Room Breakdown */
+.floor-section{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;
+}
+.floor-sec-head{
+  display:flex;justify-content:space-between;align-items:center;
+  font:700 12.5px var(--font-mono);text-transform:uppercase;color:var(--muted);
+}
+.floor-tabs{
+  display:flex;flex-wrap:wrap;gap:5px;
+}
+.fl-tab{
+  border:1px solid var(--line);background:var(--panel-solid);color:var(--ink);
+  font:600 12px var(--font-body);padding:4px 10px;border-radius:7px;cursor:pointer;
+}
+.fl-tab.active{
+  background:var(--accent);color:var(--accent-ink);border-color:var(--accent);
+}
+.floor-cards{display:grid;gap:8px;margin-top:2px}
+.floor-box{
+  background:var(--panel-solid);border:1px solid var(--line);
+  border-radius:9px;padding:9px 11px;
+}
+.floor-box-title{
+  font:700 13px var(--font-display);color:var(--accent);
+  margin-bottom:5px;display:flex;justify-content:space-between;
+}
+.room-list{
+  margin:0;padding-left:16px;display:grid;gap:3px;font-size:13px;color:var(--ink);
+}
+
+/* Nearby Chips */
+.nearby-row{display:flex;flex-wrap:wrap;gap:6px}
+.nearby-chip{
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  font:600 12px var(--font-body);padding:4px 9px;border-radius:8px;cursor:pointer;
+}
+.nearby-chip:hover{border-color:var(--accent)}
+
+@media (max-width:768px){
+  .brand-badge span.full-txt{display:none}
+  .info-sheet{
+    left:0;right:0;bottom:0;width:100vw;
+    max-height:66dvh;border-radius:20px 20px 0 0;
+    border-left:0;border-right:0;border-bottom:0;
+  }
+  .info-sheet.minimized{
+    transform:translateY(calc(100% - 68px));
+  }
+  .sheet-drag-handle{display:block}
+  .map-tools{top:auto;bottom:140px;transform:none}
+  .walk-hint{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- Thanh Tìm Kiếm & Bộ Lọc Nổi Trên Cùng -->
+  <header class="top-overlay">
+    <div class="search-bar">
+      <div class="brand-badge">
+        <span>🗺️ NTU MAP</span>
+        <span class="full-txt" style="font-weight:500;opacity:.9">· ĐH Nha Trang</span>
+      </div>
+      <div class="search-input-wrap">
+        <input id="q" type="search" placeholder="Tìm tòa nhà (A-1, NDN, G-6), phòng, khoa, cổng..." autocomplete="off">
+        <button type="button" class="clear-search" id="clearSearchBtn" aria-label="Xóa tìm kiếm">✕</button>
+      </div>
+      <button type="button" class="top-btn" id="btnToggleList" title="Danh sách 38 địa điểm">
+        📋 <span id="countBadge">38</span>
+      </button>
+    </div>
+
+    <div class="chips-scroll" id="chips" role="toolbar" aria-label="Lọc loại công trình"></div>
+  </header>
+
+  <!-- Thông báo nổi khi nhân vật đi bộ tới gần một tòa nhà -->
+  <div class="arrival-banner" id="arrivalBanner" hidden>
+    <span id="arrivalText">📍 Đang ở gần: Tòa A-1</span>
+    <button type="button" id="arrivalInspectBtn">Xem tầng & phòng</button>
+  </div>
+
+  <!-- Khung Bản Đồ Toàn Màn Hình Hỗ Trợ Kéo & Phóng To/Thu Nhỏ -->
+  <main class="map-viewport" id="viewport">
+    <div class="map-stage" id="stage">
+      <canvas id="cv" width="448" height="392" tabindex="0" aria-label="Bản đồ số khuôn viên Đại học Nha Trang"></canvas>
+    </div>
+  </main>
+
+  <!-- Cụm Nút Phóng To / Thu Nhỏ / Định Vị Nhân Vật -->
+  <aside class="map-tools" aria-label="Công cụ bản đồ">
+    <button type="button" class="tool-btn" id="btnZoomIn" title="Phóng to (+)">＋</button>
+    <button type="button" class="tool-btn" id="btnZoomOut" title="Thu nhỏ (-)">－</button>
+    <button type="button" class="tool-btn" id="btnFitMap" title="Xem toàn cảnh trường">⛶</button>
+    <button type="button" class="tool-btn active" id="btnFollowChar" title="Tự động đi theo nhân vật">🚶</button>
+    <button type="button" class="tool-btn" id="btnTheme" title="Đổi giao diện Sáng/Tối">🌓</button>
+  </aside>
+
+  <!-- Cụm Nút Di Chuyển Nhân Vật Trên Bản Đồ -->
+  <div class="dpad-box" aria-label="Điều khiển bước đi">
+    <div class="dpad">
+      <button type="button" class="u" data-k="up" aria-label="Đi lên">▲</button>
+      <button type="button" class="l" data-k="left" aria-label="Qua trái">◀</button>
+      <button type="button" class="d" data-k="down" aria-label="Đi xuống">▼</button>
+      <button type="button" class="r" data-k="right" aria-label="Qua phải">▶</button>
+    </div>
+    <div class="walk-hint">WASD / Phím mũi tên / Chạm bản đồ</div>
+  </div>
+
+  <!-- Ngăn Danh Sách 38 Địa Điểm -->
+  <aside class="directory-drawer" id="directoryDrawer" hidden aria-label="Danh sách địa điểm">
+    <div class="drawer-header">
+      <h3 id="drawerTitle">Danh sách địa điểm (38)</h3>
+      <button type="button" class="close-sheet-btn" id="btnCloseDrawer" aria-label="Đóng danh sách">✕</button>
+    </div>
+    <ul class="place-list" id="list"></ul>
+  </aside>
+
+  <!-- Thẻ Thông Tin Chi Tiết Tòa Nhà (Số tầng, các phòng, khoa/viện) -->
+  <section class="info-sheet" id="infoSheet" hidden aria-live="polite">
+    <div class="sheet-drag-handle" id="sheetHandle" title="Thu gọn / Mở rộng"></div>
+    <div class="sheet-header">
+      <div>
+        <div class="badge-row" id="sheetBadges"></div>
+        <h2 class="sheet-title" id="sheetTitle">Tên Tòa Nhà</h2>
+      </div>
+      <button type="button" class="close-sheet-btn" id="btnCloseSheet" aria-label="Đóng thông tin">✕</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </section>
+</div>
+
+<script>
+(function(){
+/* ============================================================================
+   1. HỆ TỌA ĐỘ GỐC & DỮ LIỆU CHI TIẾT 38 ĐỊA ĐIỂM (BAO GỒM A-1, NDN, 2 CỔNG PHỤ)
+   ============================================================================ */
+var AW=448,AH=392,AS=1500/448,Y0=40,CS=2,GW=AW/CS,GH=AH/CS;
+function X(x){return x/AS;}
+function Y(y){return (y-Y0)/AS;}
+function R(a){
+  var x0=Math.round(X(a[0])),y0=Math.round(Y(a[1])),x1=Math.round(X(a[2])),y1=Math.round(Y(a[3]));
+  return {x:x0,y:y0,w:Math.max(3,x1-x0),h:Math.max(3,y1-y0)};
+}
+
+var TYPES={
+  gate:'Cổng ra vào',
+  admin:'Hành chính',
+  lecture:'Giảng đường',
+  dept:'Khoa, Viện & Đa năng',
+  library:'Thư viện',
+  meeting:'Hội trường',
+  dorm:'Ký túc xá',
+  sport:'Thể thao',
+  service:'Dịch vụ'
+};
+var COL={G:'#8a5580',K:'#ffc84a',B:'#b5482a',M:'#8e2f16',HT:'#e224d6',C:'#12b5d5',NDN:'#a33b1d'};
+
+/* Danh sách đầy đủ 38 địa điểm với số tầng, giờ mở cửa và chi tiết phòng từng tầng */
+var PLACES=[
+  {
+    id:'gate',short:'Cổng chính',name:'Cổng chính (Số 02 Nguyễn Đình Chiểu)',type:'gate',lm:1,kind:'gate',
+    parts:[[487,580,504,612],[528,538,546,574]],ex:515,ey:562,
+    floors:'Cổng chính · 1 trạm trực',hours:'05:30 – 22:30',
+    desc:'Cổng vào chính thức của Trường Đại học Nha Trang từ đường Nguyễn Đình Chiểu (số 02).',
+    floorDetails:[
+      {fl:'Khu vực Cổng',rooms:[
+        'Phòng Thường trực Bảo vệ & An ninh 24/7',
+        'Cổng kiểm soát phương tiện & Lối đi bộ sinh viên',
+        'Bảng sơ đồ chỉ dẫn tổng thể khuôn viên trường'
+      ]}
+    ]
+  },
+  {
+    id:'gate_ndc',short:'Cổng phụ NĐC',name:'Cổng phụ Nguyễn Đình Chiểu (Gần HT-3)',type:'gate',lm:1,kind:'gate',
+    parts:[[218,412,235,442],[248,432,265,462]],ex:240,ey:450,
+    floors:'Cổng phụ · 1 chốt trực',hours:'06:00 – 21:30',
+    desc:'Cổng phụ phía Tây Bắc giao với đường Nguyễn Đình Chiểu, thuận tiện di chuyển vào Hội trường HT-3, Tòa A-5 và Ký túc xá K-7.',
+    floorDetails:[
+      {fl:'Khu vực Cổng',rooms:[
+        'Chốt trực bảo vệ cổng phụ Nguyễn Đình Chiểu',
+        'Lối ra vào khu vực Hội trường HT-3 & Tòa A-5',
+        'Bãi đỗ xe máy khu vực giảng đường phía Tây'
+      ]}
+    ]
+  },
+  {
+    id:'gate_pvd',short:'Cổng phụ PVĐ',name:'Cổng phụ Phạm Văn Đồng (Gần K-6)',type:'gate',lm:1,kind:'gate',
+    parts:[[1425,918,1442,950],[1455,905,1472,938]],ex:1445,ey:915,
+    floors:'Cổng phụ · Hướng biển',hours:'06:00 – 22:00',
+    desc:'Cổng phụ phía Đông Nam giao với đường ven biển Phạm Văn Đồng, nằm ngay cạnh Ký túc xá K-6 và Giảng đường G-3.',
+    floorDetails:[
+      {fl:'Khu vực Cổng',rooms:[
+        'Chốt kiểm soát an ninh cổng Phạm Văn Đồng',
+        'Lối đi bộ sang đường dạo biển Phạm Văn Đồng',
+        'Cổng tiếp cận nhanh cho sinh viên nội trú KTX K-6 & Giảng đường G-2, G-3'
+      ]}
+    ]
+  },
+  {
+    id:'a1',short:'A-1',name:'Tòa A-1 (Tòa nhà Hành chính)',type:'admin',lm:1,col:COL.M,
+    parts:[[680,835,925,872]],
+    floors:'3 tầng',hours:'07:00 – 17:30 (Thứ 2 – Thứ 6)',
+    desc:'Trung tâm điều hành và làm việc của Ban Giám hiệu cùng các phòng ban chức năng hành chính của Trường Đại học Nha Trang.',
+    units:[['Ban Giám hiệu','Tầng 2'],['Phòng Đào tạo & CTSV','Tầng 1'],['Phòng Khoa học & Hợp tác Quốc tế','Tầng 3']],
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'P.101 – P.103: Bộ phận Một cửa & Tiếp nhận hồ sơ sinh viên',
+        'P.104 – P.106: Phòng Đào tạo Đại học',
+        'P.107 – P.108: Phòng Công tác Chính trị và Sinh viên',
+        'P.109 – P.112: Phòng Kế hoạch – Tài chính (Thu học phí)'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'P.201: Văn phòng Đảng ủy – Hội đồng Trường',
+        'P.202 – P.205: Phòng làm việc Hiệu trưởng & các Phó Hiệu trưởng',
+        'P.206 – P.208: Phòng Tổ chức – Hành chính',
+        'P.209: Phòng Họp Khánh tiết & Tiếp khách quốc tế'
+      ]},
+      {fl:'Tầng 3',rooms:[
+        'P.301 – P.303: Phòng Khoa học và Công nghệ',
+        'P.304 – P.306: Phòng Hợp tác Đối ngoại',
+        'P.307 – P.309: Phòng Quản trị Thiết bị & Đầu tư',
+        'P.310: Phòng Họp trực tuyến & Đảm bảo chất lượng'
+      ]}
+    ]
+  },
+  {
+    id:'ndn',short:'NDN',name:'Tòa nhà Đa năng (NDN)',type:'dept',lm:1,col:COL.NDN,
+    parts:[[105,845,193,922]],
+    floors:'4 tầng',hours:'06:30 – 21:00',
+    desc:'Tòa nhà Đa năng (NDN) nằm gần Ký túc xá K-7 và Giảng đường G-7, phục vụ học tập tích hợp, thực hành sáng tạo, sinh hoạt học thuật và sự kiện sinh viên.',
+    units:[['Không gian Thực hành & Sáng tạo','Tầng 1–2'],['Phòng học Đa phương tiện','Tầng 3'],['Hội trường Đa năng','Tầng 4']],
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'NDN.101: Sảnh Đa năng & Khu triển lãm mô hình sinh viên',
+        'NDN.102 – NDN.103: Phòng Thực hành Đổi mới Sáng tạo & Khởi nghiệp',
+        'NDN.104: Phòng Quản lý vận hành & Kỹ thuật tòa nhà'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'NDN.201 – NDN.204: Phòng học chuyên đề tích hợp (45 – 60 chỗ)',
+        'NDN.205: Phòng Sinh hoạt Câu lạc bộ Học thuật & Đội nhóm',
+        'NDN.206: Phòng Nghỉ giảng viên'
+      ]},
+      {fl:'Tầng 3',rooms:[
+        'NDN.301 – NDN.303: Phòng Lab Đa phương tiện & Mô phỏng số',
+        'NDN.304 – NDN.305: Phòng Thảo luận nhóm & Seminar (Coworking Space)'
+      ]},
+      {fl:'Tầng 4',rooms:[
+        'NDN.401: Hội trường Đa năng (Sức chứa 250 chỗ)',
+        'NDN.402: Phòng Kỹ thuật Âm thanh – Ánh sáng & Hậu trường'
+      ]}
+    ]
+  },
+  {
+    id:'a3',short:'A-3',name:'Tòa A-3',type:'dept',col:COL.B,
+    parts:[[522,490,572,528]],
+    floors:'3 tầng',hours:'07:00 – 17:30',
+    desc:'Khu nhà làm việc của Khoa Kinh tế và Khoa Sau đại học, nằm ngay gần Cổng chính Nguyễn Đình Chiểu.',
+    units:[['Khoa Kinh tế','Tầng 1'],['Khoa Sau đại học','Tầng 2']],
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'A3.101: Văn phòng Khoa Kinh tế',
+        'A3.102 – A3.104: Bộ môn Quản trị Kinh doanh & Marketing',
+        'A3.105: Phòng Tư vấn học tập & Tiếp sinh viên Khoa Kinh tế'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'A3.201: Văn phòng Khoa Sau đại học (Tiếp nhận học viên Cao học & NCS)',
+        'A3.202 – A3.204: Phòng Quản lý Đào tạo Thạc sĩ & Tiến sĩ',
+        'A3.205: Phòng Họp Hội đồng chấm luận văn'
+      ]},
+      {fl:'Tầng 3',rooms:[
+        'A3.301 – A3.303: Phòng Seminar nghiên cứu kinh tế biển & Du lịch',
+        'A3.304: Phòng Lưu trữ hồ sơ chuyên môn'
+      ]}
+    ]
+  },
+  {
+    id:'a4',short:'A-4',name:'Tòa A-4',type:'dept',col:COL.B,
+    parts:[[548,528,600,562]],
+    floors:'2 tầng',hours:'07:00 – 17:30',
+    desc:'Tòa nhà chuyên môn và văn phòng hỗ trợ đào tạo nằm liền kề Tòa A-3 và Giảng đường G-8.',
+    units:[['Văn phòng Dự án & Hỗ trợ Đào tạo','Tầng 1–2']],
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'A4.101 – A4.102: Văn phòng các Chương trình Hợp tác & Dự án',
+        'A4.103: Phòng Tư vấn Tuyển sinh & Hướng nghiệp'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'A4.201 – A4.203: Phòng làm việc chuyên gia & Giảng viên thỉnh giảng',
+        'A4.204: Phòng Họp chuyên đề nhỏ'
+      ]}
+    ]
+  },
+  {
+    id:'ht3',short:'HT-3',name:'Hội trường HT-3',type:'meeting',col:COL.HT,
+    parts:[[65,430,170,468],[65,468,102,520]],
+    floors:'2 tầng',hours:'07:00 – 21:00',
+    desc:'Tổ hợp Hội trường HT-3 và trụ sở Viện Khoa học Biển và Công nghệ Khai thác Thủy sản nằm gần Cổng phụ Nguyễn Đình Chiểu.',
+    units:[['Hội trường lớn HT-3','Tầng 1'],['Viện Khoa học Biển và Công nghệ Khai thác Thủy sản','Tầng 2']],
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'Hội trường HT-3 (350 chỗ): Tổ chức hội nghị, bảo vệ khóa luận & sinh hoạt công dân',
+        'Phòng Khánh tiết & Phòng chờ báo cáo viên',
+        'Phòng Trực kỹ thuật âm thanh – máy chiếu'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'HT3.201: Văn phòng Viện Khoa học Biển và Công nghệ Khai thác Thủy sản',
+        'HT3.202 – HT3.204: Phòng Mô phỏng Ngư cụ & Hải dương học nghề cá',
+        'HT3.205: Phòng Nghiên cứu Khai thác & Nguồn lợi Thủy sản'
+      ]}
+    ]
+  },
+  {
+    id:'a5',short:'A-5',name:'Tòa A-5 (Khu Thí nghiệm & Thực hành)',type:'dept',col:COL.K,
+    parts:[[88,650,325,712],[105,580,142,650],[188,580,225,650],[275,598,310,650]],
+    floors:'3 tầng (3 nhánh chữ E)',hours:'07:00 – 18:00',
+    desc:'Tổ hợp nhà thí nghiệm, xưởng thực hành kỹ thuật và phòng lab chuyên sâu có diện tích lớn ở khu vực phía Tây.',
+    units:[['Xưởng Thực hành Kỹ thuật','Tầng 1'],['Hệ thống Phòng Lab Thực nghiệm','Tầng 2–3']],
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'Nhánh A5-A (P.101 – P.105): Xưởng Thực hành Cơ điện & Gia công',
+        'Nhánh A5-B (P.106 – P.110): Phòng Thí nghiệm Vật liệu & Đo lường',
+        'Nhánh A5-C (P.111 – P.114): Kho thiết bị thực hành & Trạm an toàn lao động'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'A5.201 – A5.206: Phòng Thí nghiệm Hóa – Sinh & Phân tích môi trường',
+        'A5.207 – A5.210: Phòng Thực hành Tự động hóa & Điều khiển'
+      ]},
+      {fl:'Tầng 3',rooms:[
+        'A5.301 – A5.305: Phòng Nghiên cứu chuyên sâu của Giảng viên & Nghiên cứu sinh',
+        'A5.306 – A5.308: Phòng học hướng dẫn thực hành trước khi vào xưởng'
+      ]}
+    ]
+  },
+  {
+    id:'k7',short:'K-7',name:'Ký túc xá K-7',type:'dorm',col:COL.K,
+    parts:[[45,723,112,770],[75,770,150,805],[28,790,75,840]],
+    floors:'4 tầng',hours:'05:00 – 23:00',
+    desc:'Khu ký túc xá sinh viên phía Tây khuôn viên, nằm gần Tòa nhà Đa năng (NDN) và Giảng đường G-7.',
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'Phòng Quản lý KTX K-7 & Trực bảo vệ',
+        'Phòng Tự học chung & Khu sinh hoạt cộng đồng',
+        'Phòng ở sinh viên: K7.101 – K7.116'
+      ]},
+      {fl:'Tầng 2 – Tầng 4',rooms:[
+        'Tầng 2: Phòng ở nội trú K7.201 – K7.218',
+        'Tầng 3: Phòng ở nội trú K7.301 – K7.318',
+        'Tầng 4: Phòng ở nội trú K7.401 – K7.418 & Khu phơi đồ'
+      ]}
+    ]
+  },
+  {
+    id:'g7',short:'G-7',name:'Giảng đường G-7',type:'lecture',col:COL.G,
+    parts:[[205,785,300,825],[260,760,300,790],[295,805,345,850]],
+    floors:'4 tầng',hours:'06:30 – 21:30',
+    desc:'Giảng đường học tập lý thuyết và thảo luận cho các học phần đại cương và cơ sở ngành.',
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'G7.101 – G7.104: Phòng học lý thuyết lớn (80 – 100 chỗ)',
+        'Phòng Trực Giảng đường & Quản lý thiết bị âm thanh'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'G7.201 – G7.206: Phòng học tiêu chuẩn (60 chỗ, trang bị máy chiếu)',
+        'Sảnh nghỉ giải lao giữa giờ'
+      ]},
+      {fl:'Tầng 3 – Tầng 4',rooms:[
+        'Tầng 3 (G7.301 – G7.306): Phòng học chuyên đề & Ngoại ngữ',
+        'Tầng 4 (G7.401 – G7.405): Phòng học nhóm & Tự học buổi tối'
+      ]}
+    ]
+  },
+  {
+    id:'g6',short:'G-6',name:'Giảng đường G-6 (Khoa CNTT)',type:'lecture',col:COL.G,
+    parts:[[345,875,400,912],[380,900,460,935],[430,918,495,952]],
+    floors:'4 tầng',hours:'06:30 – 21:30',
+    desc:'Tổ hợp giảng đường và trụ sở Khoa Công nghệ Thông tin cùng hệ thống phòng máy tính thực hành.',
+    units:[['Khoa Công nghệ Thông tin','Tầng 2'],['Trung tâm Thực hành Máy tính','Tầng 3–4']],
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'G6.101 – G6.105: Giảng đường lý thuyết đa phương tiện',
+        'G6.106: Phòng Trực kỹ thuật mạng & Quản trị giảng đường'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'G6.201: Văn phòng Khoa Công nghệ Thông tin',
+        'G6.202 – G6.203: Bộ môn Kỹ thuật Phần mềm & Hệ thống Thông tin',
+        'G6.204 – G6.205: Bộ môn Mạng máy tính & Trí tuệ Nhân tạo'
+      ]},
+      {fl:'Tầng 3',rooms:[
+        'G6.301 – G6.306: Phòng Lab Thực hành Lập trình & Cơ sở dữ liệu (Mỗi phòng 45 máy)',
+        'G6.307: Phòng Server & Quản trị hệ thống Lab'
+      ]},
+      {fl:'Tầng 4',rooms:[
+        'G6.401 – G6.405: Phòng Thực hành Đồ họa, IoT & An toàn thông tin',
+        'G6.406: Phòng CLB Tin học Sinh viên NTU'
+      ]}
+    ]
+  },
+  {
+    id:'g5',short:'G-5',name:'Giảng đường G-5',type:'lecture',col:COL.G,
+    parts:[[517,906,630,938]],
+    floors:'3 tầng',hours:'06:30 – 21:00',
+    desc:'Dãy giảng đường trung tâm nằm giữa Giảng đường G-6 và Tòa A-1.',
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'G5.101 – G5.104: Phòng học lý thuyết (70 chỗ)',
+        'Phòng Nghỉ giảng viên giữa ca'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'G5.201 – G5.205: Phòng học tiêu chuẩn (50 – 60 chỗ)'
+      ]},
+      {fl:'Tầng 3',rooms:[
+        'G5.301 – G5.305: Phòng học ngoại ngữ & Thảo luận chuyên đề'
+      ]}
+    ]
+  },
+  {
+    id:'g4',short:'G-4',name:'Giảng đường G-4',type:'lecture',col:COL.G,
+    parts:[[578,995,697,1030]],
+    floors:'3 tầng',hours:'06:30 – 21:00',
+    desc:'Giảng đường phía Nam nằm gần Hội trường HT-1, không gian thoáng mát đón gió biển.',
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'G4.101 – G4.104: Giảng đường lớn phục vụ lớp ghép (90 chỗ)'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'G4.201 – G4.205: Phòng học tiêu chuẩn trang bị màn hình tương tác'
+      ]},
+      {fl:'Tầng 3',rooms:[
+        'G4.301 – G4.305: Phòng học lý thuyết & Khu tự học mở'
+      ]}
+    ]
+  },
+  {
+    id:'ht1',short:'HT-1',name:'Hội trường HT-1',type:'meeting',col:COL.HT,
+    parts:[[737,1007,812,1040]],
+    floors:'2 tầng',hours:'07:00 – 22:00',
+    desc:'Hội trường lớn trung tâm nằm phía Nam Tòa A-1, nơi diễn ra các lễ khai giảng, tốt nghiệp, hội diễn văn nghệ và sự kiện lớn của trường.',
+    floorDetails:[
+      {fl:'Tầng 1 (Khán phòng chính)',rooms:[
+        'Khán phòng chính HT-1 (Sức chứa 500 chỗ ngồi)',
+        'Sân khấu trung tâm, Phòng Hậu trường & Phòng Khách VIP',
+        'Sảnh đón tiếp đại biểu & Khu vực check-in sự kiện'
+      ]},
+      {fl:'Tầng 2 (Ban công & Kỹ thuật)',rooms:[
+        'Khán đài tầng 2 (150 chỗ ngồi)',
+        'Phòng Điều khiển Âm thanh, Ánh sáng & Truyền hình trực tiếp'
+      ]}
+    ]
+  },
+  {
+    id:'a2',short:'A-2',name:'Tòa A-2',type:'dept',col:COL.B,
+    parts:[[890,872,925,935],[890,935,1090,975]],
+    floors:'3 tầng',hours:'07:00 – 17:30',
+    desc:'Tòa nhà chữ L nằm liền kề phía Đông Nam Tòa A-1, là trụ sở của Khoa Xây dựng và Viện Công nghệ Sinh học & Môi trường.',
+    units:[['Khoa Xây dựng','Tầng 1'],['Viện Công nghệ Sinh học và Môi trường','Tầng 1–2']],
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'A2.101 – A2.103: Văn phòng Khoa Xây dựng & Phòng Bộ môn Kết cấu',
+        'A2.104 – A2.106: Văn phòng Viện Công nghệ Sinh học và Môi trường',
+        'A2.107: Phòng Thí nghiệm Địa kỹ thuật & Vật liệu xây dựng'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'A2.201 – A2.204: Phòng Lab Công nghệ Sinh học phân tử & Vi sinh',
+        'A2.205 – A2.207: Phòng Thí nghiệm Kỹ thuật Môi trường & Xử lý nước'
+      ]},
+      {fl:'Tầng 3',rooms:[
+        'A2.301 – A2.304: Phòng Đồ án Kiến trúc – Xây dựng (Studio)',
+        'A2.305 – A2.306: Phòng Nghiên cứu chuyên đề Sinh học biển'
+      ]}
+    ]
+  },
+  {
+    id:'b3',short:'B-3',name:'Tòa B-3',type:'dept',col:COL.B,
+    parts:[[1085,815,1145,862],[1065,862,1105,938]],
+    floors:'4 tầng',hours:'07:00 – 18:00',
+    desc:'Tổ hợp văn phòng khoa và phòng thí nghiệm của Khoa Công nghệ Thực phẩm, Khoa Điện – Điện tử và Viện Nuôi trồng Thủy sản.',
+    units:[['Khoa Công nghệ Thực phẩm','Tầng 1'],['Khoa Điện – Điện tử','Tầng 1–2'],['Viện Nuôi trồng Thủy sản','Tầng 3']],
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'B3.101 – B3.103: Văn phòng Khoa Công nghệ Thực phẩm & Lab Chế biến',
+        'B3.104 – B3.106: Văn phòng Khoa Điện – Điện tử'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'B3.201 – B3.204: Phòng Thực hành Điện tử Viễn thông, Vi điều khiển & PLC',
+        'B3.205 – B3.207: Phòng Phân tích Chất lượng & Vi sinh Thực phẩm'
+      ]},
+      {fl:'Tầng 3',rooms:[
+        'B3.301 – B3.303: Văn phòng Viện Nuôi trồng Thủy sản',
+        'B3.304 – B3.306: Phòng Lab Dinh dưỡng & Bệnh học Thủy sản'
+      ]},
+      {fl:'Tầng 4',rooms:[
+        'B3.401 – B3.404: Phòng Hội thảo chuyên ngành & Phòng Nghiên cứu sau đại học'
+      ]}
+    ]
+  },
+  {
+    id:'g3',short:'G-3',name:'Giảng đường G-3',type:'lecture',col:COL.G,
+    parts:[[1145,878,1320,915]],
+    floors:'4 tầng',hours:'06:30 – 21:30',
+    desc:'Dãy giảng đường lớn phía Đông Nam có tầm nhìn thẳng ra biển Nha Trang, nằm gần Cổng phụ Phạm Văn Đồng.',
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'G3.101 – G3.105: Giảng đường lớn (80 – 120 chỗ)',
+        'Phòng Trực quản lý thiết bị giảng đường G-3'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'G3.201 – G3.206: Phòng học lý thuyết tiêu chuẩn (60 chỗ)'
+      ]},
+      {fl:'Tầng 3',rooms:[
+        'G3.301 – G3.306: Phòng học chuyên ngành Kỹ thuật & Thủy sản'
+      ]},
+      {fl:'Tầng 4',rooms:[
+        'G3.401 – G3.406: Phòng học view biển & Không gian thảo luận nhóm'
+      ]}
+    ]
+  },
+  {
+    id:'k6',short:'K-6',name:'Ký túc xá K-6',type:'dorm',col:COL.K,
+    parts:[[1385,808,1428,862]],
+    floors:'5 tầng',hours:'05:00 – 23:00',
+    desc:'Tòa ký túc xá sinh viên nằm sát đường Phạm Văn Đồng và Cổng phụ PVĐ, hưởng trọn gió biển mát mẻ.',
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'Ban Quản lý KTX K-6 & Phòng trực an ninh',
+        'Khu để xe & Phòng sinh hoạt chung',
+        'Phòng nội trú K6.101 – K6.110'
+      ]},
+      {fl:'Tầng 2 – Tầng 5',rooms:[
+        'Tầng 2: Phòng ở sinh viên K6.201 – K6.212',
+        'Tầng 3: Phòng ở sinh viên K6.301 – K6.312',
+        'Tầng 4: Phòng ở sinh viên K6.401 – K6.412',
+        'Tầng 5: Phòng ở sinh viên K6.501 – K6.512 (Tầm nhìn toàn cảnh biển)'
+      ]}
+    ]
+  },
+  {
+    id:'g1',short:'G-1',name:'Giảng đường G-1',type:'lecture',col:COL.G,
+    parts:[[1195,482,1320,540]],
+    floors:'4 tầng',hours:'06:30 – 21:30',
+    desc:'Tổ hợp giảng đường và văn phòng của 3 khoa lớn: Khoa Cơ khí, Khoa Ngoại ngữ và Khoa Kế toán – Tài chính.',
+    units:[['Khoa Cơ khí','Tầng 1'],['Khoa Ngoại ngữ','Tầng 2'],['Khoa Kế toán – Tài chính','Tầng 3']],
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'G1.101: Văn phòng Khoa Cơ khí',
+        'G1.102 – G1.103: Bộ môn Chế tạo máy, Cơ điện tử & Kỹ thuật nhiệt lạnh',
+        'G1.104 – G1.106: Giảng đường học tập tầng 1'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'G1.201: Văn phòng Khoa Ngoại ngữ',
+        'G1.202 – G1.205: Phòng Lab Nghe nhìn (Multimedia Language Lab)',
+        'G1.206 – G1.207: Phòng học Tiếng Anh, Tiếng Nhật, Tiếng Hàn, Tiếng Pháp'
+      ]},
+      {fl:'Tầng 3',rooms:[
+        'G1.301: Văn phòng Khoa Kế toán – Tài chính',
+        'G1.302 – G1.304: Phòng Thực hành Kế toán máy & Mô phỏng Ngân hàng',
+        'G1.305 – G1.307: Phòng học chuyên ngành Tài chính – Kế toán'
+      ]},
+      {fl:'Tầng 4',rooms:[
+        'G1.401 – G1.406: Giảng đường học tập chung & Phòng luyện thi chuẩn đầu ra ngoại ngữ'
+      ]}
+    ]
+  },
+  {
+    id:'g2',short:'G-2',name:'Giảng đường G-2',type:'lecture',col:COL.G,
+    parts:[[1280,602,1335,650],[1265,650,1372,718]],
+    floors:'3 tầng',hours:'06:30 – 21:00',
+    desc:'Khu giảng đường phía Đông khuôn viên, nơi đặt trụ sở Khoa Lý luận Chính trị và các phòng học đại cương.',
+    units:[['Khoa Lý luận Chính trị','Tầng 1']],
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'G2.101: Văn phòng Khoa Lý luận Chính trị',
+        'G2.102 – G2.103: Bộ môn Triết học, Kinh tế chính trị & Tư tưởng Hồ Chí Minh',
+        'G2.104 – G2.106: Giảng đường lớn (100 chỗ)'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'G2.201 – G2.206: Phòng học lý thuyết các học phần đại cương & Pháp luật'
+      ]},
+      {fl:'Tầng 3',rooms:[
+        'G2.301 – G2.306: Phòng học chuyên đề & Thảo luận nhóm'
+      ]}
+    ]
+  },
+  {
+    id:'a7',short:'A-7',name:'Tòa A-7 (Trung tâm Nghiên cứu Thủy sản)',type:'dept',col:COL.C,
+    parts:[[1160,598,1268,697]],
+    floors:'2 tầng & Khu bể thực nghiệm',hours:'07:00 – 17:30',
+    desc:'Trung tâm Nghiên cứu Sức khỏe và Giống Động vật Thủy sản, nằm giữa Sân bóng đá và Giảng đường G-2.',
+    units:[['Trung tâm Nghiên cứu Sức khỏe và Giống Động vật Thủy sản','Tầng 1–2']],
+    floorDetails:[
+      {fl:'Tầng 1 & Khu Trại giống',rooms:[
+        'A7.101: Văn phòng Trung tâm Nghiên cứu',
+        'A7.102 – A7.105: Hệ thống bể ương nuôi thực nghiệm tuần hoàn (RAS)',
+        'A7.106: Phòng Chuẩn bị mẫu & Xử lý nước biển'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'A7.201 – A7.203: Phòng Lab Chẩn đoán bệnh thủy sản bằng sinh học phân tử (PCR)',
+        'A7.204 – A7.205: Phòng Nuôi cấy vi tảo & Thức ăn tươi sống'
+      ]}
+    ]
+  },
+  {
+    id:'pitch',short:'Sân bóng đá',name:'Sân bóng đá (Football Field)',type:'sport',lm:1,kind:'pitch',
+    parts:[[985,543,1135,722]],
+    floors:'Sân vận động ngoài trời',hours:'05:30 – 21:00',
+    desc:'Sân bóng đá trung tâm của trường, nơi diễn ra các giờ học Giáo dục thể chất, giải bóng đá sinh viên NTU Cup và đường chạy điền kinh.',
+    floorDetails:[
+      {fl:'Khu vực Sân vận động',rooms:[
+        'Sân cỏ bóng đá 11 người tiêu chuẩn kèm hệ thống đèn chiếu sáng',
+        'Đường chạy điền kinh bao quanh sân',
+        'Khán đài cổ vũ & Khu vực khởi động thể chất'
+      ]}
+    ]
+  },
+  {
+    id:'gym',short:'Nhà thi đấu',name:'Nhà thi đấu Đa năng (Gymnasium)',type:'sport',lm:1,kind:'gym',
+    parts:[[815,575,955,740]],
+    floors:'2 tầng (Khán đài)',hours:'06:00 – 21:00',
+    desc:'Nhà thi đấu thể thao đa năng nằm cạnh Sân bóng đá, phục vụ giảng dạy Giáo dục thể chất và các giải đấu bóng chuyền, cầu lông, bóng rổ, võ thuật.',
+    floorDetails:[
+      {fl:'Tầng 1 (Sàn thi đấu)',rooms:[
+        'Sàn thi đấu đa năng (Bóng rổ, Bóng chuyền, Cầu lông, Futsal trong nhà)',
+        'Văn phòng Trung tâm Giáo dục Thể chất & Quốc phòng',
+        'Phòng Dụng cụ thể thao & Phòng Y tế sơ cứu'
+      ]},
+      {fl:'Tầng 2 (Khán đài)',rooms:[
+        'Khán đài 2 bên (Sức chứa 800 cổ động viên)',
+        'Khu tập luyện Bóng bàn & Thể dục nhịp điệu'
+      ]}
+    ]
+  },
+  {
+    id:'a6',short:'A-6',name:'Tòa A-6 (Bảo tàng Thủy sinh)',type:'dept',col:COL.C,
+    parts:[[775,623,825,670]],
+    floors:'2 tầng',hours:'07:30 – 17:00',
+    desc:'Bảo tàng Động – Thực vật Thủy sinh lưu giữ hàng ngàn mẫu vật sinh vật biển quý hiếm phục vụ học tập, nghiên cứu và tham quan.',
+    units:[['Bảo tàng Động – Thực vật Thủy sinh','Tầng 1–2']],
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'Sảnh Trưng bày Mẫu vật Cá biển, San hô & Động vật thân mềm',
+        'Khu tiêu bản xương cá voi & Các loài thủy sản đặc hữu vùng biển Việt Nam',
+        'Quầy hướng dẫn thuyết minh & Tiếp đón đoàn tham quan'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'Phòng Trưng bày Thực vật biển (Rong biển, Cỏ biển, Thực vật ngập mặn)',
+        'Phòng Lưu trữ mẫu vật ngâm cồn & Phòng Chế tác tiêu bản'
+      ]}
+    ]
+  },
+  {
+    id:'g8',short:'G-8',name:'Giảng đường G-8',type:'lecture',col:COL.G,
+    parts:[[600,563,725,595]],
+    floors:'3 tầng',hours:'06:30 – 21:00',
+    desc:'Giảng đường nằm ngay trục đường chính từ Cổng Nguyễn Đình Chiểu đi vào khu trung tâm.',
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'G8.101 – G8.104: Phòng học lý thuyết (60 – 80 chỗ)',
+        'Phòng Trực giảng đường G-8'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'G8.201 – G8.205: Phòng học tiêu chuẩn (60 chỗ)'
+      ]},
+      {fl:'Tầng 3',rooms:[
+        'G8.301 – G8.305: Phòng học chuyên đề & Tự học'
+      ]}
+    ]
+  },
+  {
+    id:'b1',short:'B-1',name:'Tòa B-1',type:'dept',col:COL.B,
+    parts:[[662,672,725,700]],
+    floors:'2 tầng',hours:'07:00 – 17:30',
+    desc:'Tòa nhà làm việc của các trung tâm dịch vụ đào tạo, bồi dưỡng ngắn hạn và hỗ trợ sinh viên.',
+    units:[['Trung tâm Ngoại ngữ – Tin học & Bồi dưỡng','Tầng 1–2']],
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'B1.101 – B1.102: Văn phòng ghi danh các khóa đào tạo kỹ năng & chứng chỉ',
+        'B1.103: Phòng Tư vấn Hỗ trợ việc làm Sinh viên'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'B1.201 – B1.203: Phòng học bồi dưỡng chuyên đề quy mô vừa (35 chỗ)'
+      ]}
+    ]
+  },
+  {
+    id:'a8',short:'A-8',name:'Tòa A-8',type:'dept',col:COL.B,
+    parts:[[695,705,728,798]],
+    floors:'3 tầng',hours:'07:00 – 17:30',
+    desc:'Trụ sở Khoa Đào tạo Tại chức (Hệ vừa làm vừa học và Đào tạo từ xa), nằm trên trục nối giữa B-1 và Tòa A-1.',
+    units:[['Khoa Đào tạo Tại chức','Tầng 1–2']],
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'A8.101: Văn phòng Khoa Đào tạo Tại chức (Tiếp nhận hồ sơ học viên)',
+        'A8.102 – A8.103: Phòng Quản lý học vụ hệ Vừa làm vừa học'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'A8.201 – A8.203: Phòng Quản lý Đào tạo Từ xa & Phát triển học liệu số'
+      ]},
+      {fl:'Tầng 3',rooms:[
+        'A8.301 – A8.303: Phòng Họp chuyên môn & Lưu trữ bài thi'
+      ]}
+    ]
+  },
+  {
+    id:'canteen',short:'Nhà ăn',name:'Nhà ăn Sinh viên (Canteen)',type:'service',lm:1,col:COL.B,
+    parts:[[690,395,780,420],[735,368,782,395]],
+    floors:'2 tầng',hours:'06:00 – 20:30',
+    desc:'Nhà ăn tập trung phục vụ điểm tâm, cơm trưa, cơm tối và giải khát cho sinh viên, giảng viên ngay cạnh cụm Ký túc xá K-1 đến K-5.',
+    floorDetails:[
+      {fl:'Tầng 1 (Khu ẩm thực chính)',rooms:[
+        'Quầy Cơm phần tự chọn & Bún/Phở điểm tâm sáng',
+        'Quầy Nước giải khát, Cà phê & Đồ ăn nhẹ',
+        'Sảnh bàn ăn tập trung (Sức chứa 300 chỗ)'
+      ]},
+      {fl:'Tầng 2 (Không gian Cafe & Nghỉ trưa)',rooms:[
+        'Không gian Cafe học nhóm & Nghỉ trưa thoáng mát',
+        'Khu vực phục vụ đặt tiệc liên hoan CLB/Lớp'
+      ]}
+    ]
+  },
+  {
+    id:'k8',short:'K-8',name:'Ký túc xá K-8',type:'dorm',col:COL.K,
+    parts:[[838,255,912,300],[800,285,880,330],[780,320,850,358]],
+    floors:'5 tầng (3 khối bậc thang)',hours:'05:00 – 23:00',
+    desc:'Cụm ký túc xá nằm trên đồi cao phía Bắc khuôn viên trường, gồm 3 khối nhà xếp bậc thang thoáng đãng.',
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'Phòng Trực Ban quản lý KTX K-8 & Trạm y tế nội trú',
+        'Phòng Sinh hoạt chung & Quầy tạp hóa tiện lợi',
+        'Phòng ở sinh viên: K8.101 – K8.120'
+      ]},
+      {fl:'Tầng 2 – Tầng 5',rooms:[
+        'Tầng 2 – 3: Phòng ở nội trú K8.201 – K8.324',
+        'Tầng 4 – 5: Phòng ở nội trú K8.401 – K8.524 (View toàn cảnh thành phố & biển)'
+      ]}
+    ]
+  },
+  {
+    id:'k1',short:'K-1',name:'Ký túc xá K-1',type:'dorm',col:COL.K,
+    parts:[[908,305,975,370]],
+    floors:'4 tầng',hours:'05:00 – 23:00',
+    desc:'Tòa ký túc xá nằm ở khu đồi phía Bắc, liền kề KTX K-8 và K-2.',
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'Văn phòng Ban Quản lý Ký túc xá (Cụm K1 – K5)',
+        'Phòng ở sinh viên: K1.101 – K1.112'
+      ]},
+      {fl:'Tầng 2 – Tầng 4',rooms:[
+        'Tầng 2: Phòng ở nội trú K1.201 – K1.214',
+        'Tầng 3: Phòng ở nội trú K1.301 – K1.314',
+        'Tầng 4: Phòng ở nội trú K1.401 – K1.414'
+      ]}
+    ]
+  },
+  {
+    id:'k2',short:'K-2',name:'Ký túc xá K-2',type:'dorm',col:COL.K,
+    parts:[[815,368,880,398]],
+    floors:'4 tầng',hours:'05:00 – 23:00',
+    desc:'Ký túc xá sinh viên nằm ngay phía Đông Nhà ăn (Canteen), cực kỳ thuận tiện cho sinh hoạt hằng ngày.',
+    floorDetails:[
+      {fl:'Tầng 1 – Tầng 2',rooms:[
+        'Tầng 1: Phòng trực K-2 & Phòng ở K2.101 – K2.110',
+        'Tầng 2: Phòng ở nội trú K2.201 – K2.212'
+      ]},
+      {fl:'Tầng 3 – Tầng 4',rooms:[
+        'Tầng 3: Phòng ở nội trú K2.301 – K2.312',
+        'Tầng 4: Phòng ở nội trú K2.401 – K2.412'
+      ]}
+    ]
+  },
+  {
+    id:'k3',short:'K-3',name:'Ký túc xá K-3',type:'dorm',col:COL.K,
+    parts:[[782,425,898,455]],
+    floors:'4 tầng',hours:'05:00 – 23:00',
+    desc:'Dãy ký túc xá trung tâm thuộc cụm nội trú phía Bắc, nằm giữa K-2 và K-4.',
+    floorDetails:[
+      {fl:'Tầng 1 – Tầng 2',rooms:[
+        'Tầng 1: Phòng tự học KTX & Phòng ở K3.101 – K3.114',
+        'Tầng 2: Phòng ở nội trú K3.201 – K3.216'
+      ]},
+      {fl:'Tầng 3 – Tầng 4',rooms:[
+        'Tầng 3: Phòng ở nội trú K3.301 – K3.316',
+        'Tầng 4: Phòng ở nội trú K3.401 – K3.416'
+      ]}
+    ]
+  },
+  {
+    id:'k4',short:'K-4',name:'Ký túc xá K-4',type:'dorm',col:COL.K,
+    parts:[[782,473,898,503]],
+    floors:'4 tầng',hours:'05:00 – 23:00',
+    desc:'Dãy ký túc xá nằm đối diện Nhà thi đấu Đa năng qua trục đường nội bộ.',
+    floorDetails:[
+      {fl:'Tầng 1 – Tầng 2',rooms:[
+        'Tầng 1: Phòng trực & Phòng ở K4.101 – K4.114',
+        'Tầng 2: Phòng ở nội trú K4.201 – K4.216'
+      ]},
+      {fl:'Tầng 3 – Tầng 4',rooms:[
+        'Tầng 3: Phòng ở nội trú K4.301 – K4.316',
+        'Tầng 4: Phòng ở nội trú K4.401 – K4.416'
+      ]}
+    ]
+  },
+  {
+    id:'k5',short:'K-5',name:'Ký túc xá K-5',type:'dorm',col:COL.K,
+    parts:[[655,420,688,475],[585,475,718,508]],
+    floors:'4 tầng (Hình chữ L)',hours:'05:00 – 23:00',
+    desc:'Ký túc xá K-5 nằm gần Nhà ăn và Tòa A-3, thuận tiện ra Cổng chính Nguyễn Đình Chiểu.',
+    floorDetails:[
+      {fl:'Tầng 1 – Tầng 2',rooms:[
+        'Tầng 1: Phòng trực K-5, Khu giặt sấy tự động & Phòng K5.101 – K5.112',
+        'Tầng 2: Phòng ở nội trú K5.201 – K5.216'
+      ]},
+      {fl:'Tầng 3 – Tầng 4',rooms:[
+        'Tầng 3: Phòng ở nội trú K5.301 – K5.316',
+        'Tầng 4: Phòng ở nội trú K5.401 – K5.416'
+      ]}
+    ]
+  },
+  {
+    id:'x3',short:'X-3',name:'Tòa X-3 (Khoa Kỹ thuật Giao thông)',type:'dept',col:COL.B,
+    parts:[[920,375,1000,415],[990,385,1065,432]],
+    floors:'2 tầng & Xưởng thực hành',hours:'07:00 – 17:30',
+    desc:'Trụ sở Khoa Kỹ thuật Giao thông cùng hệ thống xưởng động cơ, ô tô và kỹ thuật tàu thủy.',
+    units:[['Khoa Kỹ thuật Giao thông','Tầng 1–2']],
+    floorDetails:[
+      {fl:'Tầng 1 (Văn phòng & Xưởng)',rooms:[
+        'X3.101: Văn phòng Khoa Kỹ thuật Giao thông',
+        'X3.102 – X3.104: Xưởng Thực hành Động cơ đốt trong & Công nghệ Ô tô',
+        'X3.105: Phòng Thí nghiệm Thiết kế & Kết cấu Tàu thủy'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'X3.201 – X3.203: Phòng Mô phỏng CAD/CAM/CAE hàng hải & Ô tô',
+        'X3.204: Phòng Bộ môn Kỹ thuật Tàu thủy & Thiết bị nổi'
+      ]}
+    ]
+  },
+  {
+    id:'x1',short:'X-1',name:'Tòa X-1 (Xưởng Thực hành Cơ khí – Điện)',type:'dept',col:COL.C,
+    parts:[[1075,415,1130,450],[1105,450,1170,487]],
+    floors:'2 tầng',hours:'07:00 – 17:30',
+    desc:'Khu xưởng thực hành kỹ thuật nằm giữa Tòa X-3, Thư viện và Giảng đường G-1.',
+    units:[['Trung tâm Thực hành Cơ khí – Điện – Nhiệt lạnh','Tầng 1–2']],
+    floorDetails:[
+      {fl:'Tầng 1',rooms:[
+        'X1.101 – X1.103: Xưởng Thực hành Hàn, Tiện, Phay CNC',
+        'X1.104: Xưởng Thực hành Hệ thống Lạnh công nghiệp & Điều hòa không khí'
+      ]},
+      {fl:'Tầng 2',rooms:[
+        'X1.201 – X1.203: Phòng Học lý thuyết kết hợp hướng dẫn an toàn xưởng',
+        'X1.204: Phòng Chuẩn bị dụng cụ & Đo kiểm kỹ thuật'
+      ]}
+    ]
+  },
+  {
+    id:'lib',short:'Thư viện',name:'Thư viện (Tổ hợp TV-2, TV-3, TV-4)',type:'library',lm:1,col:COL.B,
+    parts:[[1100,268,1160,320],[1085,315,1125,355],[1150,350,1230,410],[1200,293,1310,345],[1270,345,1312,402]],
+    circle:[1312,353,27],
+    floors:'4 tầng (3 khối TV-2, TV-3, TV-4)',hours:'07:00 – 21:00',
+    desc:'Tổ hợp Thư viện trung tâm nằm trên đồi cao phía Đông Bắc với kiến trúc khối tròn đặc trưng nhìn ra toàn cảnh Vịnh Nha Trang.',
+    units:[['Khối TV-2: Mượn trả & Kho sách','Tầng 1–2'],['Khối TV-3: Phòng đọc chuyên ngành','Tầng 1–3'],['Khối TV-4: Thư viện số & Không gian học nhóm','Tầng 1–4']],
+    floorDetails:[
+      {fl:'Tầng 1 (Sảnh & Mượn trả)',rooms:[
+        'Quầy Thông tin, Cấp thẻ thư viện & Thủ tục Mượn/Trả giáo trình (TV-2)',
+        'Kho sách Mượn về nhà & Khu tra cứu danh mục OPAC',
+        'Khu gửi đồ tự động & Sảnh triển lãm sách mới'
+      ]},
+      {fl:'Tầng 2 (Phòng Đọc Tổng hợp)',rooms:[
+        'Phòng Đọc Sách Chuyên ngành Thủy sản, Kỹ thuật & Kinh tế (TV-3)',
+        'Phòng Đọc Báo – Tạp chí khoa học trong nước & quốc tế',
+        'Khu vực tự học cá nhân yên tĩnh (200 chỗ)'
+      ]},
+      {fl:'Tầng 3 (Thư viện Số & Luận văn)',rooms:[
+        'Phòng Đa phương tiện & Truy cập Cơ sở dữ liệu điện tử (TV-4)',
+        'Phòng Đọc Luận văn Thạc sĩ, Luận án Tiến sĩ & Tài liệu nội sinh NTU',
+        'Phòng Thảo luận nhóm có màn hình trình chiếu (6 phòng)'
+      ]},
+      {fl:'Tầng 4 (Không gian Đọc View Biển)',rooms:[
+        'Sảnh Đọc sách Khối tròn Panorama nhìn thẳng ra Biển Nha Trang',
+        'Không gian Học tập Sáng tạo (Learning Commons) & Hội thảo sách'
+      ]}
+    ]
+  }
+];
+
+/* Các công trình phụ trợ không có tên (Đài phun nước / nhà phụ phía nam HT-1) - Đã tách NDN sang PLACES */
+var DECOR=[
+  {parts:[[830,1005,963,1043]],col:COL.C},
+  {parts:[[960,845,1008,905],[975,905,995,935]],col:'#35b6e0',water:1}
+];
+
+PLACES.forEach(function(p){
+  p.rects=p.parts.map(R);
+  var x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  p.rects.forEach(function(r){x0=Math.min(x0,r.x);y0=Math.min(y0,r.y);x1=Math.max(x1,r.x+r.w);y1=Math.max(y1,r.y+r.h);});
+  p.bb={x0:x0,y0:y0,x1:x1,y1:y1};
+  var big=p.rects.slice().sort(function(a,b){return b.w*b.h-a.w*a.h;})[0];
+  if(p.ex===undefined){p.axe=big.x+big.w/2;p.aye=big.y+big.h+3;}else{p.axe=X(p.ex);p.aye=Y(p.ey);}
+});
+DECOR.forEach(function(d){d.rects=d.parts.map(R);});
+
+/* ============================================================================
+   2. DỰNG NỀN BẢN ĐỒ PIXEL-ART & ĐƯỜNG NỘI BỘ (CẬP NHẬT 2 CỔNG PHỤ)
+   ============================================================================ */
+function mk(w,h){var c=document.createElement('canvas');c.width=w;c.height=h;return c;}
+function crisp(draw,color){
+  var c=mk(AW,AH),g=c.getContext('2d');draw(g);
+  var im=g.getImageData(0,0,AW,AH),d=im.data,n=parseInt(color.slice(1),16),r=n>>16,gg=(n>>8)&255,b=n&255;
+  for(var i=0;i<d.length;i+=4){var a=d[i+3]>=110?255:0;d[i]=r;d[i+1]=gg;d[i+2]=b;d[i+3]=a;}
+  g.putImageData(im,0,0);return c;
+}
+function alphaOf(c){return c.getContext('2d').getImageData(0,0,AW,AH).data;}
+function poly(g,pts){pts.forEach(function(p,i){var x=X(p[0]),y=Y(p[1]);if(i)g.lineTo(x,y);else{g.beginPath();g.moveTo(x,y);}});g.closePath();}
+function line(g,pts,w){g.lineWidth=w/AS;g.lineCap='round';g.lineJoin='round';g.beginPath();pts.forEach(function(p,i){var x=X(p[0]),y=Y(p[1]);if(i)g.lineTo(x,y);else g.moveTo(x,y);});g.stroke();}
+
+var CAMPUS=[[125,345],[255,440],[360,480],[455,530],[700,385],[1000,240],[1090,200],[1110,232],[1190,266],[1300,296],[1385,338],[1420,395],[1405,430],[1355,520],[1360,550],[1440,605],[1478,650],[1480,720],[1462,800],[1457,940],[1300,1010],[1100,1085],[900,1135],[805,1150],[400,1015],[60,905],[18,880],[12,780],[14,620],[35,500],[70,410]];
+var SEA=[[730,1272],[1000,1245],[1300,1175],[1500,1085],[1500,950],[1300,1065],[1090,1155],[900,1215]];
+var OUTER=[
+  [[118,318],[250,425],[330,462],[440,505],[1095,180],[1300,122],[1495,66]],
+  [[0,905],[300,1005],[580,1105],[800,1175]],
+  [[545,1250],[800,1185],[1090,1135],[1300,1045],[1500,935]],
+  [[580,1105],[612,1160],[592,1215],[545,1250]],
+  [[545,1250],[430,1295]]
+];
+var INNER=[
+  [[495,590],[560,572],[640,555],[730,538]],
+  [[730,538],[850,522],[957,518],[1060,516],[1145,520]],
+  [[1145,520],[1280,555],[1350,605],[1425,670],[1445,760],[1452,930]],
+  [[1148,520],[1148,740]],
+  [[750,752],[1000,745],[1250,740],[1385,752]],
+  [[730,538],[725,640],[735,800]],
+  [[957,518],[962,640],[975,800]],
+  [[665,812],[900,805],[1100,800],[1310,792]],
+  [[957,518],[920,440],[885,350]],
+  [[957,518],[1040,440],[1100,380]],
+  [[1100,375],[1160,405],[1285,425]],
+  [[1100,375],[1070,320],[1110,235]],
+  [[1195,430],[1170,520]],
+  [[520,590],[600,640],[655,700],[675,780],[690,880],[710,945],[790,982]],
+  [[155,520],[300,565],[350,610],[357,720],[350,870],[310,935],[330,962],[500,962],[700,962],[790,982]],
+  [[242,425],[240,450],[205,520]], /* Đường nối Cổng phụ Nguyễn Đình Chiểu (gần HT-3) */
+  [[150,800],[215,855],[260,880],[350,945]], /* Đường qua trước Tòa nhà Đa năng NDN */
+  [[1100,968],[1290,968],[1335,925],[1325,860],[1340,800]],
+  [[1330,852],[1445,853],[1448,935]] /* Đường nối Cổng phụ Phạm Văn Đồng (gần K-6) */
+];
+
+var seaL=crisp(function(g){poly(g,SEA);g.fill();},'#4a9fd0');
+var roadOutEdge=crisp(function(g){OUTER.forEach(function(p){line(g,p,50);});},'#6d7076');
+var roadOut=crisp(function(g){OUTER.forEach(function(p){line(g,p,42);});},'#9a9ea4');
+var campusL=crisp(function(g){poly(g,CAMPUS);g.fill();},'#b9de9f');
+var dashL=crisp(function(g){g.lineWidth=1.3;g.setLineDash([2,2]);poly(g,CAMPUS);g.stroke();},'#56664d');
+function clipped(draw,color){return crisp(function(g){draw(g);g.globalCompositeOperation='destination-in';g.drawImage(campusL,0,0);},color);}
+var pathEdge=clipped(function(g){INNER.forEach(function(p){line(g,p,25);});},'#c2b48c');
+var pathL=clipped(function(g){INNER.forEach(function(p){line(g,p,19);});},'#dfd3b0');
+var campusA=alphaOf(campusL),pathA=alphaOf(pathL),seaA=alphaOf(seaL);
+function inCampus(x,y){x=Math.floor(x);y=Math.floor(y);return x>=0&&y>=0&&x<AW&&y<AH&&campusA[(y*AW+x)*4+3]>0;}
+
+/* ---------- Lưới vật cản cho nhân vật đi bộ ---------- */
+var blocked=new Uint8Array(GW*GH);
+(function(){for(var cy=0;cy<GH;cy++)for(var cx=0;cx<GW;cx++)if(!inCampus(cx*CS+1,cy*CS+1))blocked[cy*GW+cx]=1;})();
+function markRect(r){
+  for(var cy=Math.floor(r.y/CS);cy<=Math.floor((r.y+r.h-1)/CS);cy++)for(var cx=Math.floor(r.x/CS);cx<=Math.floor((r.x+r.w-1)/CS);cx++){
+    if(cx<0||cy<0||cx>=GW||cy>=GH)continue;
+    var px=cx*CS+1,py=cy*CS+1;
+    if(px>=r.x&&px<r.x+r.w&&py>=r.y&&py<r.y+r.h)blocked[cy*GW+cx]=1;
+  }
+}
+function markCircle(cx0,cy0,rad){
+  for(var cy=0;cy<GH;cy++)for(var cx=0;cx<GW;cx++){
+    var dx=cx*CS+1-cx0,dy=cy*CS+1-cy0;if(dx*dx+dy*dy<=rad*rad)blocked[cy*GW+cx]=1;
+  }
+}
+function rectFree(x,y,w,h){
+  for(var py=y;py<y+h;py+=CS)for(var px=x;px<x+w;px+=CS){
+    var cx=Math.floor(px/CS),cy=Math.floor(py/CS);
+    if(cx<0||cy<0||cx>=GW||cy>=GH||blocked[cy*GW+cx])return false;
+  }
+  return true;
+}
+PLACES.forEach(function(p){p.rects.forEach(markRect);if(p.circle)markCircle(X(p.circle[0]),Y(p.circle[1]),p.circle[2]/AS);});
+DECOR.forEach(function(d){d.rects.forEach(markRect);});
+
+/* ---------- Cây xanh khuôn viên ---------- */
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+var rand=rng(20261102),trees=[];
+var CL=[[150,540,70,25,5],[210,735,90,35,8],[470,805,105,55,16],[290,925,50,25,4],[385,968,35,25,4],[510,1010,30,25,3],[745,1085,60,40,6],[905,1095,85,35,7],[1040,1040,50,30,4],[1230,985,90,25,7],[1115,1005,40,25,3],[1025,260,55,50,6],[1285,445,40,30,4],[1370,415,35,15,3],[595,630,45,90,6],[610,760,15,75,4],[1030,765,280,12,10],[1350,890,15,45,3]];
+function nearEntry(x,y){
+  if(Math.hypot(x-X(560),y-Y(600))<12)return true;
+  for(var i=0;i<PLACES.length;i++){if(Math.hypot(x+3-PLACES[i].axe,y+8-PLACES[i].aye)<9)return true;}
+  return false;
+}
+CL.forEach(function(c){
+  var placed=0,tries=0;
+  while(placed<c[4]&&tries<120){
+    tries++;
+    var ang=rand()*6.2832,rr=Math.sqrt(rand());
+    var ax=Math.round(X(c[0]+Math.cos(ang)*rr*c[2])),ay=Math.round(Y(c[1]+Math.sin(ang)*rr*c[3]));
+    if(!inCampus(ax+3,ay+7)||nearEntry(ax,ay))continue;
+    if(pathA[(Math.min(AH-1,ay+7)*AW+ax+3)*4+3])continue;
+    if(!rectFree(ax,ay+2,7,6))continue;
+    trees.push({x:ax,y:ay,v:rand()<.5?0:1});markRect({x:ax+2,y:ay+5,w:3,h:3});placed++;
+  }
+});
+trees.sort(function(a,b){return a.y-b.y;});
+
+/* ---------- Vẽ lớp nền tĩnh ---------- */
+function shade(hex,f){
+  var n=parseInt(hex.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255,m=f<0?0:255,t=Math.abs(f);
+  return 'rgb('+Math.round(r+(m-r)*t)+','+Math.round(g+(m-g)*t)+','+Math.round(b+(m-b)*t)+')';
+}
+function drawRect(c,r,col){
+  var x=r.x,y=r.y,w=r.w,h=r.h,wall=h>=9?Math.min(4,Math.floor(h/3)):0,roof=h-wall;
+  c.fillStyle='rgba(0,0,0,.2)';c.fillRect(x+1,y+h,w,2);
+  c.fillStyle=col;c.fillRect(x,y,w,roof);
+  c.fillStyle=shade(col,.28);c.fillRect(x,y,w,1);
+  if(roof>=7){c.fillStyle=shade(col,-.14);for(var ty=y+3;ty<y+roof-1;ty+=3)c.fillRect(x+1,ty,w-2,1);}
+  c.fillStyle=shade(col,-.4);c.fillRect(x,y+roof-1,w,1);
+  if(wall){
+    c.fillStyle='#f0e4c8';c.fillRect(x,y+roof,w,wall);
+    c.fillStyle='#5b8fb9';for(var wx=x+2;wx<x+w-3;wx+=4)c.fillRect(wx,y+roof+1,2,Math.max(1,wall-2));
+  }
+  c.strokeStyle='#2b2a26';c.lineWidth=1;c.strokeRect(x+.5,y+.5,w-1,h-1);
+}
+
+var stat=mk(AW,AH),sc=stat.getContext('2d');
+sc.fillStyle='#ebe8dd';sc.fillRect(0,0,AW,AH);
+sc.drawImage(seaL,0,0);sc.drawImage(roadOutEdge,0,0);sc.drawImage(roadOut,0,0);
+sc.drawImage(campusL,0,0);
+(function(){
+  var tr=rng(99),i,x,y;
+  for(i=0;i<1100;i++){x=Math.floor(tr()*AW);y=Math.floor(tr()*AH);if(inCampus(x,y)&&!pathA[(y*AW+x)*4+3]){sc.fillStyle=tr()<.5?'#a3cf88':'#c6e6ad';sc.fillRect(x,y,1,tr()<.5?2:1);}}
+  var fl=['#fbe3ec','#fff1a8','#ffffff','#f6a9c2'];
+  for(i=0;i<260;i++){x=Math.floor(tr()*AW);y=Math.floor(tr()*AH);if(inCampus(x,y)&&!pathA[(y*AW+x)*4+3]){sc.fillStyle=fl[Math.floor(tr()*4)];sc.fillRect(x,y,1,1);}}
+})();
+sc.drawImage(dashL,0,0);sc.drawImage(pathEdge,0,0);sc.drawImage(pathL,0,0);
+(function(){
+  var r=R([405,668,520,755]);sc.fillStyle='#78b78a';sc.fillRect(r.x,r.y,r.w,r.h);sc.fillStyle='#5f9f74';sc.fillRect(r.x,r.y,r.w,1);sc.fillRect(r.x,r.y+r.h-1,r.w,1);
+  [[770,850],[875,950],[1015,1090],[1122,1200],[1225,1290]].forEach(function(s){
+    var x0=Math.round(X(s[0])),x1=Math.round(X(s[1])),yy=Math.round(Y(806));
+    sc.fillStyle='#2f8f4e';sc.fillRect(x0+1,yy,x1-x0-2,3);sc.fillRect(x0,yy+1,x1-x0,1);sc.fillStyle='#4aae6a';sc.fillRect(x0+2,yy,x1-x0-4,1);
+  });
+})();
+
+function drawPitch(c,r){
+  c.fillStyle='#1a7a45';c.fillRect(r.x,r.y,r.w,r.h);
+  c.strokeStyle='#e8f3e8';c.lineWidth=1;c.strokeRect(r.x+3.5,r.y+3.5,r.w-7,r.h-7);
+  c.fillStyle='#e8f3e8';c.fillRect(r.x+3,r.y+Math.floor(r.h/2),r.w-6,1);
+  c.strokeRect(r.x+Math.floor(r.w/2)-5.5,r.y+Math.floor(r.h/2)-5.5,11,11);
+  c.strokeStyle='#0f5a31';c.strokeRect(r.x+.5,r.y+.5,r.w-1,r.h-1);
+}
+function drawGym(c,r){
+  c.fillStyle='rgba(0,0,0,.2)';c.fillRect(r.x+1,r.y+r.h,r.w,2);
+  c.fillStyle='#146b3c';c.fillRect(r.x,r.y,r.w,r.h);
+  c.fillStyle='#1d8a50';c.fillRect(r.x+8,r.y+8,r.w-16,r.h-16);
+  c.fillStyle='#0f5a31';[[r.x+4,r.y+4],[r.x+r.w-4,r.y+4],[r.x+4,r.y+r.h-4],[r.x+r.w-4,r.y+r.h-4]].forEach(function(p){c.beginPath();c.arc(p[0],p[1],5,0,6.2832);c.fill();});
+  c.strokeStyle='#0a3d21';c.lineWidth=1;c.strokeRect(r.x+.5,r.y+.5,r.w-1,r.h-1);
+}
+function drawGate(c,p){
+  /* Vẽ trụ cổng và vòm cổng đỏ nổi bật cho cả Cổng chính và 2 Cổng phụ */
+  p.rects.forEach(function(r){
+    c.fillStyle='rgba(0,0,0,.25)';c.fillRect(r.x+1,r.y+r.h,r.w,2);
+    c.fillStyle='#b9a27a';c.fillRect(r.x,r.y,r.w,r.h);
+    c.fillStyle='#8f7a55';c.fillRect(r.x,r.y,r.w,1);c.fillRect(r.x+r.w-1,r.y+1,1,r.h-1);
+    c.fillStyle='#c0392b';c.fillRect(r.x+1,r.y+2,r.w-2,3);
+  });
+  if(p.rects.length>=2){
+    var r0=p.rects[0],r1=p.rects[1];
+    c.strokeStyle='#c0392b';c.lineWidth=2;
+    c.beginPath();
+    c.moveTo(r0.x+r0.w/2,r0.y+2);
+    c.lineTo(r1.x+r1.w/2,r1.y+2);
+    c.stroke();
+  }
+}
+
+(function(){
+  var items=[];
+  PLACES.forEach(function(p){items.push({y:p.bb.y1,f:function(){
+    if(p.kind==='gate'){drawGate(sc,p);return;}
+    if(p.kind==='pitch'){drawPitch(sc,p.rects[0]);return;}
+    if(p.kind==='gym'){drawGym(sc,p.rects[0]);return;}
+    p.rects.slice().sort(function(a,b){return (a.y+a.h)-(b.y+b.h);}).forEach(function(r){drawRect(sc,r,p.col);});
+    if(p.circle){
+      var cx=Math.round(X(p.circle[0])),cy=Math.round(Y(p.circle[1])),rad=Math.round(p.circle[2]/AS);
+      sc.fillStyle=shade(p.col,.12);sc.beginPath();sc.arc(cx,cy,rad,0,6.2832);sc.fill();
+      sc.strokeStyle='#2b2a26';sc.lineWidth=1;sc.stroke();
+      sc.fillStyle=shade(p.col,.3);sc.beginPath();sc.arc(cx,cy,rad-4,0,6.2832);sc.fill();
+    }
+  }});});
+  DECOR.forEach(function(d){items.push({y:Math.max.apply(null,d.rects.map(function(r){return r.y+r.h;})),f:function(){
+    d.rects.forEach(function(r){
+      if(d.water){sc.fillStyle='#1f8fb8';sc.fillRect(r.x-1,r.y-1,r.w+2,r.h+2);sc.fillStyle=d.col;sc.fillRect(r.x,r.y,r.w,r.h);}
+      else drawRect(sc,r,d.col);
+    });
+  }});});
+  items.sort(function(a,b){return a.y-b.y;}).forEach(function(it){it.f();});
+})();
+
+function drawTree(c,t){
+  var x=t.x,y=t.y;
+  c.fillStyle='rgba(0,0,0,.2)';c.fillRect(x+1,y+7,6,1);
+  c.fillStyle='#6b4630';c.fillRect(x+3,y+5,2,3);
+  c.fillStyle=t.v?'#3f8f4a':'#357f40';c.fillRect(x,y+1,7,5);c.fillRect(x+1,y,5,1);
+  c.fillStyle=t.v?'#5cae5f':'#4f9f55';c.fillRect(x+1,y+1,3,2);
+}
+
+var seaPts=[];
+(function(){var r=rng(7);for(var i=0;i<90;i++){var x=Math.floor(r()*AW),y=Math.floor(r()*AH);if(seaA[(y*AW+x)*4+3]&&x<AW-4)seaPts.push([x,y,r()*6]);}})();
+
+/* ============================================================================
+   3. NHÂN VẬT ĐI BỘ & THUẬT TOÁN TÌM ĐƯỜNG TRÊN BẢN ĐỒ
+   ============================================================================ */
+var P={x:X(560),y:Y(600),dir:'down',moving:false,frame:0};
+var route=[],keys={up:0,down:0,left:0,right:0};
+var followCharacter=true;
+
+function solid(px,py){
+  var cx=Math.floor(px/CS),cy=Math.floor(py/CS);
+  if(cx<0||cy<0||cx>=GW||cy>=GH)return true;
+  return blocked[cy*GW+cx]===1;
+}
+function boxFree(px,py){
+  return !(solid(px-1,py)||solid(px+1,py)||solid(px-1,py-1)||solid(px+1,py-1));
+}
+function drawPlayer(c){
+  var x=Math.round(P.x)-4,y=Math.round(P.y)-10,sw=P.moving&&P.frame%2===1?1:0;
+  /* Vòng tròn định vị xanh dưới chân nhân vật */
+  c.fillStyle='rgba(31,111,80,0.35)';
+  c.beginPath();c.arc(Math.round(P.x),Math.round(P.y)-1,5.5,0,6.2832);c.fill();
+  c.fillStyle='rgba(0,0,0,.28)';c.fillRect(x+1,y+9,6,2);
+  c.fillStyle='#34456f';c.fillRect(x+2,y+8,2,2-sw);c.fillRect(x+4,y+8,2,1+sw);
+  c.fillStyle='#e0533a';c.fillRect(x+1,y+5,6,3);
+  c.fillStyle='#f2c9a0';c.fillRect(x,y+5,1,2);c.fillRect(x+7,y+5,1,2);c.fillRect(x+1,y+2,6,3);
+  c.fillStyle='#2b2118';c.fillRect(x+1,y,6,2);
+  if(P.dir==='up'){c.fillRect(x+1,y+2,6,2);}
+  else{var ox=P.dir==='left'?-1:P.dir==='right'?1:0;c.fillRect(x+2+ox,y+3,1,1);c.fillRect(x+5+ox,y+3,1,1);}
+  if(P.dir==='left')c.fillRect(x+6,y+2,1,3);
+  if(P.dir==='right')c.fillRect(x+1,y+2,1,3);
+}
+
+function nearestFree(cx,cy){
+  cx=Math.max(0,Math.min(GW-1,cx));cy=Math.max(0,Math.min(GH-1,cy));
+  if(!blocked[cy*GW+cx])return [cx,cy];
+  for(var r=1;r<18;r++)for(var dy=-r;dy<=r;dy++)for(var dx=-r;dx<=r;dx++){
+    if(Math.max(Math.abs(dx),Math.abs(dy))!==r)continue;
+    var a=cx+dx,b=cy+dy;if(a<0||b<0||a>=GW||b>=GH)continue;
+    if(!blocked[b*GW+a])return [a,b];
+  }
+  return null;
+}
+function los(ax,ay,bx,by){
+  var d=Math.hypot(bx-ax,by-ay),n=Math.max(1,Math.ceil(d));
+  for(var i=1;i<=n;i++){if(!boxFree(ax+(bx-ax)*i/n,ay+(by-ay)*i/n))return false;}
+  return true;
+}
+function findRoute(ax,ay){
+  var f=nearestFree(Math.floor(ax/CS),Math.floor(ay/CS));if(!f)return [];
+  var s=nearestFree(Math.floor(P.x/CS),Math.floor(P.y/CS));if(!s)return [];
+  var goal=f[1]*GW+f[0],start=s[1]*GW+s[0];
+  var prev=new Int32Array(GW*GH).fill(-2),q=[start];prev[start]=-1;
+  var D=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+  for(var h=0;h<q.length;h++){
+    var cur=q[h];if(cur===goal)break;
+    var cx=cur%GW,cy=(cur-cx)/GW;
+    for(var d=0;d<8;d++){
+      var nx=cx+D[d][0],ny=cy+D[d][1];
+      if(nx<0||ny<0||nx>=GW||ny>=GH)continue;
+      var ni=ny*GW+nx;if(prev[ni]!==-2||blocked[ni])continue;
+      if(D[d][0]&&D[d][1]&&(blocked[cy*GW+nx]||blocked[ny*GW+cx]))continue;
+      prev[ni]=cur;q.push(ni);
+    }
+  }
+  if(prev[goal]===-2)return [];
+  var raw=[],n=goal;
+  while(n!==start&&n!==-1){raw.push([(n%GW)*CS+1,Math.floor(n/GW)*CS+1]);n=prev[n];}
+  raw.reverse();
+  var out=[],cx0=P.x,cy0=P.y,i=0;
+  while(i<raw.length){
+    var j=raw.length-1;
+    while(j>i&&!los(cx0,cy0,raw[j][0],raw[j][1]))j--;
+    out.push(raw[j]);cx0=raw[j][0];cy0=raw[j][1];i=j+1;
+  }
+  return out;
+}
+
+function distTo(p){
+  var best=1e9;
+  p.rects.forEach(function(r){
+    var dx=Math.max(r.x-P.x,0,P.x-(r.x+r.w)),dy=Math.max(r.y-P.y,0,P.y-(r.y+r.h));
+    best=Math.min(best,Math.hypot(dx,dy));
+  });
+  return best;
+}
+function getPlace(id){
+  for(var i=0;i<PLACES.length;i++)if(PLACES[i].id===id)return PLACES[i];
+  return null;
+}
+
+/* ============================================================================
+   4. HỆ THỐNG PAN & ZOOM TOÀN MÀN HÌNH (CHUỘT + CẢM ỨNG ĐA ĐIỂM)
+   ============================================================================ */
+var viewport=document.getElementById('viewport');
+var stage=document.getElementById('stage');
+var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+ctx.imageSmoothingEnabled=false;
+
+var cam={scale:2,tx:0,ty:0,minScale:0.8,maxScale:6.5};
+function applyTransform(){
+  stage.style.transform='translate3d('+cam.tx+'px,'+cam.ty+'px,0) scale('+cam.scale+')';
+}
+function fitMapToScreen(){
+  var vw=viewport.clientWidth,vh=viewport.clientHeight;
+  var padTop=110,padBottom=40,padSides=24;
+  var availW=Math.max(200,vw-padSides*2);
+  var availH=Math.max(200,vh-padTop-padBottom);
+  cam.minScale=Math.min(availW/AW,availH/AH)*0.85;
+  cam.scale=Math.min(availW/AW,availH/AH);
+  cam.tx=(vw-AW*cam.scale)/2;
+  cam.ty=padTop+(availH-AH*cam.scale)/2;
+  applyTransform();
+}
+function centerOnMapPoint(mx,my,targetScale){
+  if(targetScale)cam.scale=Math.max(cam.minScale,Math.min(cam.maxScale,targetScale));
+  var vw=viewport.clientWidth,vh=viewport.clientHeight;
+  var isMobile=vw<=768;
+  var centerY=isMobile?(vh*0.35):(vh*0.5);
+  var centerX=isMobile?(vw*0.5):(vw*0.42);
+  cam.tx=centerX-mx*cam.scale;
+  cam.ty=centerY-my*cam.scale;
+  applyTransform();
+}
+function zoomAt(clientX,clientY,factor){
+  var newScale=Math.max(cam.minScale,Math.min(cam.maxScale,cam.scale*factor));
+  var mx=(clientX-cam.tx)/cam.scale;
+  var my=(clientY-cam.ty)/cam.scale;
+  cam.scale=newScale;
+  cam.tx=clientX-mx*cam.scale;
+  cam.ty=clientY-my*cam.scale;
+  applyTransform();
+}
+
+/* Kéo chuột & Cuộn chuột phóng to */
+var isDragging=false,dragStartX=0,dragStartY=0,startTx=0,startTy=0,movedDist=0;
+viewport.addEventListener('wheel',function(e){
+  e.preventDefault();
+  var factor=e.deltaY<0?1.16:0.86;
+  zoomAt(e.clientX,e.clientY,factor);
+},{passive:false});
+
+var activePointers=new Map();
+var lastPinchDist=0;
+
+viewport.addEventListener('pointerdown',function(e){
+  if(e.target.closest('.pin'))return;
+  activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(activePointers.size===1){
+    isDragging=true;
+    movedDist=0;
+    dragStartX=e.clientX;dragStartY=e.clientY;
+    startTx=cam.tx;startTy=cam.ty;
+    viewport.classList.add('dragging');
+  }else if(activePointers.size===2){
+    isDragging=false;
+    var pts=Array.from(activePointers.values());
+    lastPinchDist=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);
+  }
+});
+
+window.addEventListener('pointermove',function(e){
+  if(!activePointers.has(e.pointerId))return;
+  activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(activePointers.size===2){
+    var pts=Array.from(activePointers.values());
+    var dist=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);
+    var midX=(pts[0].x+pts[1].x)/2,midY=(pts[0].y+pts[1].y)/2;
+    if(lastPinchDist>10){
+      zoomAt(midX,midY,dist/lastPinchDist);
+    }
+    lastPinchDist=dist;
+    movedDist=99;
+  }else if(isDragging&&activePointers.size===1){
+    var dx=e.clientX-dragStartX,dy=e.clientY-dragStartY;
+    movedDist=Math.hypot(dx,dy);
+    if(movedDist>4){
+      followCharacter=false;
+      updateFollowBtn();
+    }
+    cam.tx=startTx+dx;
+    cam.ty=startTy+dy;
+    applyTransform();
+  }
+});
+
+function endPointer(e){
+  activePointers.delete(e.pointerId);
+  if(activePointers.size<2)lastPinchDist=0;
+  if(activePointers.size===0){
+    isDragging=false;
+    viewport.classList.remove('dragging');
+  }
+}
+window.addEventListener('pointerup',endPointer);
+window.addEventListener('pointercancel',endPointer);
+
+/* Click/Tap trực tiếp lên đường đi trên bản đồ để dẫn nhân vật tới */
+cv.addEventListener('click',function(e){
+  if(movedDist>6)return;
+  var mx=(e.clientX-cam.tx)/cam.scale;
+  var my=(e.clientY-cam.ty)/cam.scale;
+  /* Kiểm tra nếu bấm trúng một tòa nhà thì mở thông tin tòa nhà đó */
+  var clickedPlace=null;
+  for(var i=0;i<PLACES.length;i++){
+    var p=PLACES[i];
+    for(var j=0;j<p.rects.length;j++){
+      var r=p.rects[j];
+      if(mx>=r.x-2&&mx<=r.x+r.w+2&&my>=r.y-2&&my<=r.y+r.h+2){
+        clickedPlace=p;break;
+      }
+    }
+    if(clickedPlace)break;
+  }
+  if(clickedPlace){
+    openPlaceSheet(clickedPlace.id,false);
+  }else{
+    route=findRoute(mx,my);
+  }
+});
+
+/* ============================================================================
+   5. TẠO NHÃN ĐỊA ĐIỂM, TÌM KIẾM & THẺ THÔNG TIN TẦNG / PHÒNG CHI TIẾT
+   ============================================================================ */
+var pins={},listItems={},selected=null,nearbyPlace=null,filter='all',query='',activeFloorTab='all';
+var qEl=document.getElementById('q'),clearSearchBtn=document.getElementById('clearSearchBtn');
+var chipsEl=document.getElementById('chips'),listEl=document.getElementById('list');
+var countBadge=document.getElementById('countBadge'),drawerTitle=document.getElementById('drawerTitle');
+var directoryDrawer=document.getElementById('directoryDrawer');
+var infoSheet=document.getElementById('infoSheet'),sheetBadges=document.getElementById('sheetBadges');
+var sheetTitle=document.getElementById('sheetTitle'),sheetBody=document.getElementById('sheetBody');
+var arrivalBanner=document.getElementById('arrivalBanner'),arrivalText=document.getElementById('arrivalText');
+
+function norm(s){
+  return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d');
+}
+
+/* Tạo chỉ mục tìm kiếm bao gồm cả tên phòng, số tầng và các khoa */
+PLACES.forEach(function(p){
+  var roomTxt=(p.floorDetails||[]).map(function(fd){return fd.fl+' '+fd.rooms.join(' ');}).join(' ');
+  var unitTxt=(p.units||[]).map(function(u){return u[0]+' '+u[1];}).join(' ');
+  p.hay=norm([p.short,p.name,TYPES[p.type],p.floors,p.desc,unitTxt,roomTxt].join(' '));
+});
+
+/* Gắn 38 nhãn Pin lên bản đồ */
+PLACES.forEach(function(p){
+  var b=document.createElement('button');
+  b.type='button';
+  var cls='pin'+(p.lm?' lm':'');
+  if(p.type==='gate')cls+=' gate-pin';
+  if(p.id==='ndn')cls+=' ndn-pin';
+  b.className=cls;
+  b.style.left=((p.bb.x0+p.bb.x1)/2/AW*100)+'%';
+  b.style.top=((p.bb.y0+p.bb.y1)/2/AH*100)+'%';
+  b.textContent=p.short;
+  b.setAttribute('aria-label',p.name);
+  b.addEventListener('click',function(e){
+    e.stopPropagation();
+    openPlaceSheet(p.id,true);
+  });
+  stage.appendChild(b);
+  pins[p.id]=b;
+});
+
+/* Nhãn tên đường và Biển */
+[
+  {t:'Đường Nguyễn Đình Chiểu',x:640,y:408,r:-26.5},
+  {t:'Đường Tôn Thất Tùng',x:150,y:955,r:18.4},
+  {t:'Đường Phạm Văn Đồng',x:950,y:1160,r:-9.8},
+  {t:'BIỂN NHA TRANG',x:1250,y:1150,r:-12,c:'sea'},
+  {t:'← Về trung tâm TP. Nha Trang',x:300,y:1318,r:0}
+].forEach(function(l){
+  var s=document.createElement('span');
+  s.className='st'+(l.c?' '+l.c:'');
+  s.textContent=l.t;
+  s.style.left=(l.x/1500*100)+'%';
+  s.style.top=((l.y-Y0)/(AH*AS)*100)+'%';
+  s.style.transform='translate(-50%,-50%) rotate('+l.r+'deg)';
+  stage.appendChild(s);
+});
+
+function matches(p){
+  if(filter!=='all'&&p.type!==filter)return false;
+  return !query||p.hay.indexOf(query)!==-1;
+}
+
+function renderChips(){
+  var all=[['all','Tất cả (38)']].concat(Object.keys(TYPES).map(function(k){return [k,TYPES[k]];}));
+  all.forEach(function(a){
+    var b=document.createElement('button');
+    b.type='button';b.className='chip';b.textContent=a[1];
+    b.setAttribute('aria-pressed',a[0]===filter);
+    b.addEventListener('click',function(){
+      filter=a[0];
+      Array.prototype.forEach.call(chipsEl.children,function(ch,i){
+        ch.setAttribute('aria-pressed',all[i][0]===filter);
+      });
+      renderList();
+    });
+    chipsEl.appendChild(b);
+  });
+}
+
+function renderList(){
+  listEl.innerHTML='';listItems={};var n=0;
+  PLACES.forEach(function(p){
+    var ok=matches(p);
+    pins[p.id].classList.toggle('dim',!ok);
+    if(!ok)return;
+    n++;
+    var li=document.createElement('li');
+    var b=document.createElement('button');
+    b.type='button';b.className='place-item-btn';
+    var sub=TYPES[p.type]+(p.units&&p.units.length?' · '+p.units.map(function(u){return u[0];}).join(', '):'');
+    b.innerHTML=
+      '<span class="place-code">'+p.short+'</span>'+
+      '<span class="place-meta"><strong>'+p.name+'</strong><small>'+sub+'</small></span>'+
+      '<span class="floor-pill-sm">'+(p.floors||'')+'</span>';
+    b.addEventListener('click',function(){
+      openPlaceSheet(p.id,true);
+      if(window.innerWidth<=768)directoryDrawer.hidden=true;
+    });
+    li.appendChild(b);listEl.appendChild(li);
+    listItems[p.id]=b;
+  });
+  countBadge.textContent=n;
+  drawerTitle.textContent='Danh sách địa điểm ('+n+')';
+  if(!n){
+    var empty=document.createElement('li');
+    empty.style.padding='14px';empty.style.color='var(--muted)';
+    empty.textContent='Không tìm thấy tòa nhà, phòng hoặc khoa nào khớp với từ khóa.';
+    listEl.appendChild(empty);
+  }
+  markSelected();
+}
+
+function markSelected(){
+  Object.keys(pins).forEach(function(id){pins[id].classList.toggle('on',id===selected);});
+  Object.keys(listItems).forEach(function(id){
+    if(id===selected)listItems[id].setAttribute('aria-current','true');
+    else listItems[id].removeAttribute('aria-current');
+  });
+}
+
+/* Hiển thị bảng thông tin chi tiết của Tòa nhà (Số tầng, danh sách phòng từng tầng) */
+function renderInfoSheetContent(p){
+  if(!p)return;
+  var dMeters=Math.round(distTo(p)*3.2);
+  sheetBadges.innerHTML=
+    '<span class="b-tag">'+TYPES[p.type]+'</span>'+
+    '<span class="b-tag floors">🏢 '+(p.floors||'1 tầng')+'</span>'+
+    '<span class="b-tag hours">🕒 '+(p.hours||'06:30 – 21:00')+'</span>';
+  sheetTitle.textContent=p.name;
+
+  /* Các nút chọn từng tầng */
+  var fDetails=p.floorDetails||[];
+  var tabsHtml='<button type="button" class="fl-tab '+(activeFloorTab==='all'?'active':'')+'" data-fl="all">Tất cả ('+fDetails.length+')</button>';
+  fDetails.forEach(function(fd,idx){
+    var k='f_'+idx;
+    tabsHtml+='<button type="button" class="fl-tab '+(activeFloorTab===k?'active':'')+'" data-fl="'+k+'">'+fd.fl+'</button>';
+  });
+
+  var cardsHtml='';
+  fDetails.forEach(function(fd,idx){
+    var k='f_'+idx;
+    if(activeFloorTab!=='all'&&activeFloorTab!==k)return;
+    var rList=fd.rooms.map(function(rm){return '<li>'+rm+'</li>';}).join('');
+    cardsHtml+=
+      '<div class="floor-box">'+
+        '<div class="floor-box-title"><span>'+fd.fl+'</span><span>'+fd.rooms.length+' khu vực/phòng</span></div>'+
+        '<ul class="room-list">'+rList+'</ul>'+
+      '</div>';
+  });
+
+  /* Tìm 4 tòa nhà lân cận gần nhất */
+  var nearList=PLACES.filter(function(other){return other.id!==p.id;})
+    .map(function(other){
+      return {p:other,d:Math.hypot(other.axe-p.axe,other.aye-p.aye)};
+    })
+    .sort(function(a,b){return a.d-b.d;})
+    .slice(0,4);
+
+  var nearHtml=nearList.map(function(item){
+    return '<button type="button" class="nearby-chip" data-near="'+item.p.id+'">📍 '+item.p.short+'</button>';
+  }).join('');
+
+  sheetBody.innerHTML=
+    '<p class="sheet-desc">'+p.desc+'</p>'+
+    '<div class="sheet-actions">'+
+      '<button type="button" class="btn-sheet primary" id="btnWalkTo">🧭 Chỉ đường đi bộ ('+(dMeters<8?'Đang ở đây':'~'+dMeters+'m')+')</button>'+
+      '<button type="button" class="btn-sheet" id="btnTeleportTo">⚡ Đứng tại đây</button>'+
+    '</div>'+
+    '<div class="floor-section">'+
+      '<div class="floor-sec-head"><span>Sơ đồ Tầng & Phòng chức năng</span><span>'+p.short+'</span></div>'+
+      '<div class="floor-tabs" id="floorTabsWrap">'+tabsHtml+'</div>'+
+      '<div class="floor-cards">'+cardsHtml+'</div>'+
+    '</div>'+
+    '<div>'+
+      '<div style="font:700 11.5px var(--font-mono);text-transform:uppercase;color:var(--muted);margin-bottom:6px">Địa điểm lân cận</div>'+
+      '<div class="nearby-row" id="nearbyWrap">'+nearHtml+'</div>'+
+    '</div>';
+
+  /* Gắn sự kiện cho các tab chọn tầng */
+  Array.prototype.forEach.call(document.querySelectorAll('#floorTabsWrap .fl-tab'),function(tb){
+    tb.addEventListener('click',function(){
+      activeFloorTab=tb.getAttribute('data-fl');
+      renderInfoSheetContent(p);
+    });
+  });
+
+  /* Gắn sự kiện cho nút Chỉ đường đi bộ & Dịch chuyển tới cổng tòa nhà */
+  document.getElementById('btnWalkTo').addEventListener('click',function(){
+    route=findRoute(p.axe,p.aye);
+    followCharacter=true;
+    updateFollowBtn();
+    if(window.innerWidth<=768)infoSheet.classList.add('minimized');
+  });
+  document.getElementById('btnTeleportTo').addEventListener('click',function(){
+    var f=nearestFree(Math.floor(p.axe/CS),Math.floor(p.aye/CS));
+    if(f){P.x=f[0]*CS+1;P.y=f[1]*CS+1;}else{P.x=p.axe;P.y=p.aye;}
+    route=[];
+    centerOnMapPoint(P.x,P.y,Math.max(cam.scale,2.4));
+    renderInfoSheetContent(p);
+  });
+
+  /* Gắn sự kiện cho các địa điểm lân cận */
+  Array.prototype.forEach.call(document.querySelectorAll('#nearbyWrap .nearby-chip'),function(nb){
+    nb.addEventListener('click',function(){
+      openPlaceSheet(nb.getAttribute('data-near'),true);
+    });
+  });
+}
+
+function openPlaceSheet(id,panToBuilding){
+  var p=getPlace(id);
+  if(!p)return;
+  if(selected!==id){
+    activeFloorTab='all';
+  }
+  selected=id;
+  markSelected();
+  infoSheet.hidden=false;
+  infoSheet.classList.remove('minimized');
+  renderInfoSheetContent(p);
+  if(panToBuilding){
+    followCharacter=false;
+    updateFollowBtn();
+    var cx=(p.bb.x0+p.bb.x1)/2,cy=(p.bb.y0+p.bb.y1)/2;
+    centerOnMapPoint(cx,cy,Math.max(cam.scale,2.35));
+  }
+}
+
+/* ============================================================================
+   6. SỰ KIỆN THANH CÔNG CỤ, PHÍM BẤM & TƯƠNG TÁC DI ĐỘNG
+   ============================================================================ */
+qEl.addEventListener('input',function(){
+  query=norm(qEl.value.trim());
+  clearSearchBtn.classList.toggle('show',query.length>0);
+  renderList();
+  if(query.length>0&&directoryDrawer.hidden){
+    directoryDrawer.hidden=false;
+  }
+});
+clearSearchBtn.addEventListener('click',function(){
+  qEl.value='';query='';
+  clearSearchBtn.classList.remove('show');
+  renderList();
+  qEl.focus();
+});
+
+document.getElementById('btnToggleList').addEventListener('click',function(){
+  directoryDrawer.hidden=!directoryDrawer.hidden;
+  this.classList.toggle('active',!directoryDrawer.hidden);
+});
+document.getElementById('btnCloseDrawer').addEventListener('click',function(){
+  directoryDrawer.hidden=true;
+  document.getElementById('btnToggleList').classList.remove('active');
+});
+document.getElementById('btnCloseSheet').addEventListener('click',function(){
+  infoSheet.hidden=true;
+  selected=null;
+  markSelected();
+});
+document.getElementById('sheetHandle').addEventListener('click',function(){
+  infoSheet.classList.toggle('minimized');
+});
+
+document.getElementById('btnZoomIn').addEventListener('click',function(){
+  zoomAt(viewport.clientWidth/2,viewport.clientHeight/2,1.28);
+});
+document.getElementById('btnZoomOut').addEventListener('click',function(){
+  zoomAt(viewport.clientWidth/2,viewport.clientHeight/2,0.78);
+});
+document.getElementById('btnFitMap').addEventListener('click',function(){
+  followCharacter=false;
+  updateFollowBtn();
+  fitMapToScreen();
+});
+
+var btnFollowChar=document.getElementById('btnFollowChar');
+function updateFollowBtn(){
+  btnFollowChar.classList.toggle('active',followCharacter);
+}
+btnFollowChar.addEventListener('click',function(){
+  followCharacter=!followCharacter;
+  updateFollowBtn();
+  if(followCharacter){
+    centerOnMapPoint(P.x,P.y,Math.max(cam.scale,2.2));
+  }
+});
+
+document.getElementById('btnTheme').addEventListener('click',function(){
+  var root=document.documentElement;
+  var cur=root.getAttribute('data-theme');
+  var isDark=cur==='dark'||(!cur&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+  root.setAttribute('data-theme',isDark?'light':'dark');
+});
+
+document.getElementById('arrivalInspectBtn').addEventListener('click',function(){
+  if(nearbyPlace)openPlaceSheet(nearbyPlace.id,false);
+});
+
+/* Điều khiển bàn phím WASD / Mũi tên & D-Pad */
+var keyMap={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};
+window.addEventListener('keydown',function(e){
+  if(e.target&&e.target.tagName==='INPUT')return;
+  if(e.code==='Escape'){
+    infoSheet.hidden=true;directoryDrawer.hidden=true;return;
+  }
+  var k=keyMap[e.code];if(!k)return;
+  keys[k]=1;
+  followCharacter=true;updateFollowBtn();
+  e.preventDefault();
+});
+window.addEventListener('keyup',function(e){
+  var k=keyMap[e.code];if(k)keys[k]=0;
+});
+window.addEventListener('blur',function(){keys={up:0,down:0,left:0,right:0};});
+
+Array.prototype.forEach.call(document.querySelectorAll('.dpad button'),function(b){
+  var k=b.getAttribute('data-k');
+  b.addEventListener('pointerdown',function(e){
+    e.preventDefault();keys[k]=1;
+    followCharacter=true;updateFollowBtn();
+  });
+  ['pointerup','pointerleave','pointercancel'].forEach(function(ev){
+    b.addEventListener(ev,function(){keys[k]=0;});
+  });
+});
+
+window.addEventListener('resize',fitMapToScreen);
+
+/* Khởi tạo */
+renderChips();
+renderList();
+fitMapToScreen();
+/* Mở sẵn thông tin Tòa A-1 khi mới vào để người dùng dễ hình dung */
+openPlaceSheet('a1',false);
+if(window.innerWidth<=768)infoSheet.classList.add('minimized');
+
+/* ============================================================================
+   7. VÒNG LẶP CẬP NHẬT BẢN ĐỒ & PHÁT HIỆN ĐẾN GẦN ĐỊA ĐIỂM
+   ============================================================================ */
+var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+var last=0,walkT=0,SPEED=62;
+
+function frame(ts){
+  var dt=Math.min(0.05,(ts-last)/1000||0);last=ts;
+  var vx=keys.right-keys.left,vy=keys.down-keys.up;
+  P.moving=false;
+
+  if(vx||vy){
+    route=[];
+    var len=Math.hypot(vx,vy),sx=vx/len*SPEED*dt,sy=vy/len*SPEED*dt;
+    if(sx&&boxFree(P.x+sx,P.y)){P.x+=sx;P.moving=true;}
+    if(sy&&boxFree(P.x,P.y+sy)){P.y+=sy;P.moving=true;}
+    P.dir=Math.abs(vx)>Math.abs(vy)?(vx>0?'right':'left'):(vy>0?'down':'up');
+  }else if(route.length){
+    var w=route[0],dx=w[0]-P.x,dy=w[1]-P.y,dist=Math.hypot(dx,dy),st=SPEED*dt;
+    if(dist<=st){P.x=w[0];P.y=w[1];route.shift();}
+    else{P.x+=dx/dist*st;P.y+=dy/dist*st;}
+    if(dist>0.01){P.moving=true;P.dir=Math.abs(dx)>Math.abs(vy)?(dx>0?'right':'left'):(dy>0?'down':'up');}
+  }
+
+  if(P.moving){
+    walkT+=dt;if(walkT>0.13){walkT=0;P.frame++;}
+    if(followCharacter){
+      centerOnMapPoint(P.x,P.y);
+    }
+  }else{
+    P.frame=0;
+  }
+
+  /* Kiểm tra khi nhân vật đi tới gần một địa điểm (< 8.5px trên bản đồ) */
+  var best=null,bd=8.5;
+  for(var i=0;i<PLACES.length;i++){
+    var d=distTo(PLACES[i]);
+    if(d<bd){bd=d;best=PLACES[i];}
+  }
+  if(best!==nearbyPlace){
+    nearbyPlace=best;
+    if(best){
+      arrivalBanner.hidden=false;
+      arrivalText.textContent='📍 Đã tới: '+best.name+' ('+best.floors+')';
+      /* Tự động cập nhật thẻ thông tin khi đi bộ tới nơi */
+      selected=best.id;
+      markSelected();
+      infoSheet.hidden=false;
+      renderInfoSheetContent(best);
+    }else{
+      arrivalBanner.hidden=true;
+    }
+  }
+
+  /* 1. Vẽ nền bản đồ tĩnh */
+  ctx.drawImage(stat,0,0);
+
+  /* 2. Vẽ sóng biển động */
+  var t=reduce?0:ts/1000;
+  ctx.fillStyle='#a9d6f0';
+  for(var sIdx=0;sIdx<seaPts.length;sIdx++){
+    var s=seaPts[sIdx];
+    ctx.fillRect(s[0]+Math.round(Math.sin(t*1.4+s[2])*2),s[1],3,1);
+  }
+
+  /* 3. Vẽ khung sáng quanh tòa nhà đang chọn */
+  if(selected){
+    var selP=getPlace(selected);
+    if(selP){
+      ctx.save();
+      ctx.strokeStyle='#ffd35a';
+      ctx.lineWidth=1.5;
+      selP.rects.forEach(function(r){
+        ctx.strokeRect(r.x-1,r.y-1,r.w+2,r.h+2);
+      });
+      ctx.restore();
+    }
+  }
+
+  /* 4. Vẽ đường dẫn nét đứt khi chỉ đường đi bộ */
+  if(route.length){
+    ctx.save();
+    ctx.strokeStyle='#1f6f50';
+    ctx.lineWidth=2.2;
+    ctx.setLineDash([3,2]);
+    ctx.lineDashOffset=-t*14;
+    ctx.beginPath();
+    ctx.moveTo(P.x,P.y);
+    for(var rIdx=0;rIdx<route.length;rIdx++){
+      ctx.lineTo(route[rIdx][0],route[rIdx][1]);
+    }
+    ctx.stroke();
+    var endPt=route[route.length-1];
+    ctx.fillStyle='#ef4444';
+    ctx.beginPath();ctx.arc(endPt[0],endPt[1],2.8,0,6.2832);ctx.fill();
+    ctx.restore();
+  }
+
+  /* 5. Vẽ Cây xanh & Nhân vật (Y-sorting) */
+  var drawn=false;
+  for(var k=0;k<trees.length;k++){
+    var tr=trees[k];
+    if(!drawn&&tr.y+8>P.y){drawPlayer(ctx);drawn=true;}
+    drawTree(ctx,tr);
+  }
+  if(!drawn)drawPlayer(ctx);
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
