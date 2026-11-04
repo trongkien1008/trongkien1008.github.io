@@ -1,0 +1,2786 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NTU Campus Quest 2.0 — NTU Life RPG & Bản đồ Đại học Nha Trang</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root{
+  --bg:#eef0e6; --panel:#fbfbf6; --ink:#23302a; --muted:#5d6b61; --line:#cdd3c2;
+  --accent:#2f7d5b; --accent-ink:#ffffff; --frame:#26352b;
+  --gold:#f59e0b; --gold-bg:#fef3c7; --gold-ink:#78350f;
+  --quest:#d97706; --danger:#dc2626; --blue:#0284c7;
+  --font-display:'Bricolage Grotesque','Be Vietnam Pro',system-ui,sans-serif;
+  --font-body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141b17; --panel:#1c2621; --ink:#e6efe8; --muted:#9db0a3; --line:#2d3b33;
+    --accent:#6fcf9d; --accent-ink:#0f1a14; --frame:#0c120f;
+    --gold:#fbbf24; --gold-bg:#3b2f13; --gold-ink:#fde68a;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141b17; --panel:#1c2621; --ink:#e6efe8; --muted:#9db0a3; --line:#2d3b33;
+  --accent:#6fcf9d; --accent-ink:#0f1a14; --frame:#0c120f;
+  --gold:#fbbf24; --gold-bg:#3b2f13; --gold-ink:#fde68a;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg); color:var(--ink); font:14.5px/1.55 var(--font-body);
+  padding-block:16px 36px;
+  padding-left:max(14px,env(safe-area-inset-left,0px));
+  padding-right:max(14px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:1280px;margin:0 auto;display:grid;gap:14px}
+
+/* Header & Top Bar */
+.top-header{
+  display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px;
+}
+h1{font:800 clamp(22px,3.6vw,34px)/1.08 var(--font-display);margin:0;text-wrap:balance;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.title-pill{
+  font:700 12px/1 var(--font-mono);background:var(--gold-bg);color:var(--gold-ink);
+  border:1.5px solid var(--gold);padding:5px 9px;border-radius:99px;letter-spacing:.03em;
+}
+.sub{margin:4px 0 0;color:var(--muted);max-width:72ch;font-size:14px}
+.header-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn-util{
+  border:1.5px solid var(--line);background:var(--panel);color:var(--ink);
+  font:600 12.5px var(--font-body);padding:7px 11px;border-radius:8px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;transition:transform .1s,border-color .15s;
+}
+.btn-util:hover{border-color:var(--accent);transform:translateY(-1px)}
+.btn-util.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn-util.active-mode{background:#fef3c7;color:#78350f;border-color:#f59e0b;font-weight:700}
+
+/* RPG Toolbar: Class, Weather, Canteen, Flycam, Postcard, Trail */
+.rpg-bar{
+  display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;
+  background:var(--panel);border:2px solid var(--frame);border-radius:12px;padding:9px 12px;
+  box-shadow:3px 3px 0 var(--line);
+}
+.rpg-group{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.rpg-label{font:700 11px/1 var(--font-mono);text-transform:uppercase;color:var(--muted);margin-right:2px}
+.class-pill{
+  border:1.5px solid var(--line);background:var(--bg);color:var(--ink);
+  font:600 12px/1.1 var(--font-body);padding:6px 10px;border-radius:8px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:5px;transition:all .15s;
+}
+.class-pill:hover{border-color:var(--accent)}
+.class-pill.active{
+  background:var(--accent);color:var(--accent-ink);border-color:var(--frame);
+  box-shadow:2px 2px 0 var(--frame);font-weight:700;
+}
+.buff-tag{
+  font:700 11px/1 var(--font-mono);background:#dcfce7;color:#14532d;border:1px solid #16a34a;
+  padding:4px 8px;border-radius:99px;display:inline-flex;align-items:center;gap:4px;
+}
+
+/* Trail Banner */
+.trail-banner{
+  background:linear-gradient(90deg,#1e3a8a,#0284c7);color:#fff;border:2px solid var(--frame);
+  border-radius:10px;padding:9px 14px;display:flex;flex-wrap:wrap;justify-content:space-between;
+  align-items:center;gap:10px;box-shadow:3px 3px 0 var(--line);
+}
+.trail-banner[hidden]{display:none!important}
+.trail-stat{font:700 14px/1.2 var(--font-mono);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+
+/* HUD Bar */
+.hud{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;
+  background:var(--panel);border:2px solid var(--frame);border-radius:12px;padding:10px 14px;
+  box-shadow:4px 4px 0 var(--line);
+}
+.hud-item{display:flex;flex-direction:column;gap:4px;justify-content:center}
+.hud-label{font:600 11px/1.1 var(--font-mono);text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.hud-val{font:800 16px/1.2 var(--font-display);color:var(--ink);display:flex;align-items:center;gap:6px}
+.rank-badge{
+  font:700 11.5px/1.2 var(--font-body);background:var(--gold-bg);color:var(--gold-ink);
+  padding:2px 8px;border-radius:6px;border:1px solid var(--gold);
+}
+.bar-track{width:100%;height:8px;background:var(--line);border-radius:99px;overflow:hidden;position:relative}
+.bar-fill{height:100%;border-radius:99px;transition:width .2s ease}
+.bar-fill.xp{background:linear-gradient(90deg,#f59e0b,#10b981)}
+.bar-fill.quest{background:linear-gradient(90deg,#f97316,#eab308)}
+.bar-fill.checkin{background:var(--accent)}
+.bar-fill.stamina{background:linear-gradient(90deg,#0ea5e9,#22c55e);transition:width .08s linear}
+.bar-fill.stamina.low{background:#ef4444}
+
+.hud-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn-hud{
+  flex:1;min-width:120px;border:2px solid var(--frame);background:#ffd35a;color:#1f2b24;
+  font:700 12.5px/1.2 var(--font-body);padding:8px 10px;border-radius:8px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:5px;box-shadow:2px 2px 0 var(--frame);
+  transition:transform .1s,background .15s;
+}
+.btn-hud:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--frame)}
+.btn-hud:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--frame)}
+.btn-hud.sprint-on{background:#22c55e;color:#052e16}
+.btn-hud.secondary{background:var(--bg);color:var(--ink)}
+
+/* Main Layout */
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}
+@media (max-width:940px){.layout{grid-template-columns:minmax(0,1fr)}}
+
+/* Map Stage */
+.stage{
+  position:relative;border:3px solid var(--frame);box-shadow:5px 5px 0 var(--line);
+  background:#ebe8dd;line-height:0;min-width:0;overflow:hidden;border-radius:6px;
+}
+canvas{display:block;width:100%;height:auto;image-rendering:pixelated;touch-action:manipulation;cursor:crosshair;outline:none}
+canvas:focus-visible{outline:3px solid #ffd35a;outline-offset:-3px}
+
+/* Map Pins */
+.pin{
+  position:absolute;transform:translate(-50%,-50%);
+  white-space:nowrap;background:rgba(255,255,248,.94);color:#1f2b24;border:1px solid #26352b;
+  padding:0 4px;font:700 10px/1.45 var(--font-body);cursor:pointer;transition:opacity .15s,transform .15s;
+  border-radius:3px;z-index:2;
+}
+.pin:hover{transform:translate(-50%,-50%) scale(1.08);z-index:5}
+.pin.lm{font-size:11px;padding:0 5px}
+.pin.on{background:#ffd35a;color:#111;z-index:6;box-shadow:0 0 0 2px #26352b}
+.pin.checked{border-color:#15803d;background:#dcfce7;color:#14532d}
+.pin.checked.on{background:#ffd35a;color:#111}
+.pin.quest-pin{border:1.5px solid #d97706;background:#fef3c7;color:#78350f}
+.pin.quest-done{border:1.5px solid #15803d;background:#bbf7d0;color:#14532d}
+.pin.dim{opacity:.22;pointer-events:none}
+.pin:focus-visible{outline:2px solid #1f6fe0;outline-offset:1px}
+.compact .pin{font-size:8px;padding:0 2px}.compact .pin.lm{font-size:8.5px}
+
+.st{position:absolute;white-space:nowrap;pointer-events:none;font:700 10px/1 var(--font-body);color:#2d3338;letter-spacing:.03em;z-index:1}
+.st.sea{color:#e8f6ff;font-size:12px;letter-spacing:.2em}
+.compact .st{font-size:8px}
+.compass{
+  position:absolute;right:2%;bottom:2%;width:34px;height:34px;border:2px solid #2d3338;
+  border-radius:50%;background:rgba(255,255,255,.88);display:grid;place-items:center;
+  font:700 11px/1 var(--font-body);color:#2d3338;pointer-events:none;z-index:3;
+}
+
+/* Floating Proximity Action Banner on Map */
+.map-prompt{
+  position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
+  background:rgba(20,27,23,.93);color:#fff;border:2px solid #ffd35a;
+  padding:8px 14px;border-radius:99px;display:flex;align-items:center;gap:10px;
+  font:600 13px/1.2 var(--font-body);z-index:10;box-shadow:0 6px 20px rgba(0,0,0,.35);
+  white-space:nowrap;max-width:94%;overflow:hidden;
+}
+.map-prompt[hidden]{display:none!important}
+.map-prompt button{
+  border:0;background:#ffd35a;color:#141b17;font:700 12px/1 var(--font-body);
+  padding:6px 11px;border-radius:99px;cursor:pointer;white-space:nowrap;
+}
+.map-prompt button.quest-btn{background:#fb923c;color:#141b17}
+.map-prompt button:hover{filter:brightness(1.06)}
+
+/* Controls & D-pad */
+.controls-bar{
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-top:8px;
+}
+.hint{display:flex;gap:8px 14px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
+.hint kbd{font:500 11.5px var(--font-mono);border:1px solid var(--line);background:var(--panel);padding:1px 5px;border-radius:3px}
+
+.dpad-wrap{
+  display:none;align-items:center;justify-content:center;gap:18px;margin-top:12px;flex-wrap:wrap;
+}
+.dpad{display:grid;grid-template-columns:repeat(3,50px);grid-template-rows:repeat(2,50px);gap:6px}
+.dpad button,.mobile-actions button{
+  border:2px solid var(--frame);background:var(--panel);color:var(--ink);font-size:18px;
+  border-radius:8px;touch-action:none;cursor:pointer;font-weight:700;
+  box-shadow:2px 2px 0 var(--line);
+}
+.dpad .u{grid-column:2;grid-row:1}.dpad .l{grid-column:1;grid-row:2}.dpad .d{grid-column:2;grid-row:2}.dpad .r{grid-column:3;grid-row:2}
+.mobile-actions{display:flex;flex-direction:column;gap:8px}
+.mobile-actions button{font-size:13px;padding:10px 14px;background:#ffd35a;color:#1f2b24}
+@media (hover:none),(max-width:940px){.dpad-wrap{display:flex}}
+
+/* Side Tabs (3 tabs) */
+.side-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px}
+.side-tab{
+  border:1.5px solid var(--line);background:var(--bg);color:var(--muted);
+  font:700 11.5px var(--font-body);padding:7px 4px;border-radius:7px;cursor:pointer;text-align:center;
+}
+.side-tab.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* Canteen Shop & Life Panel */
+.shop-list{display:grid;gap:8px}
+.shop-item{
+  border:1.5px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 11px;
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+}
+.shop-item-info{display:grid;gap:2px}
+.shop-item-title{font:700 13px var(--font-body);color:var(--ink)}
+.shop-item-desc{font-size:11.5px;color:var(--muted)}
+.btn-buy{
+  border:1.5px solid var(--frame);background:#ffd35a;color:#1c1917;
+  font:700 11.5px var(--font-mono);padding:6px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;
+}
+.btn-buy:hover{filter:brightness(1.05)}
+
+/* Postcard Canvas Preview */
+.postcard-wrap{
+  display:grid;gap:10px;text-align:center;
+}
+.postcard-canvas{
+  width:100%;max-width:460px;height:auto;margin:0 auto;border:3px solid var(--frame);
+  border-radius:8px;box-shadow:4px 4px 0 var(--line);image-rendering:pixelated;
+}
+
+#q{width:100%;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:13.5px var(--font-body);padding:8px 10px;border-radius:7px;margin-bottom:8px}
+#q:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.chip{border:1px solid var(--line);background:transparent;color:var(--ink);font:500 11.5px var(--font-body);padding:3.5px 9px;border-radius:99px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+.list{list-style:none;margin:0;padding:0;display:grid;gap:3px;max-height:310px;overflow:auto}
+.list button{
+  width:100%;display:grid;grid-template-columns:52px 1fr auto;gap:8px;align-items:center;
+  text-align:left;background:transparent;border:0;color:var(--ink);font:13.5px var(--font-body);
+  padding:6px 8px;border-radius:6px;cursor:pointer;
+}
+.list button:hover{background:var(--bg)}
+.list button[aria-current="true"]{background:var(--bg);box-shadow:inset 3px 0 0 var(--accent)}
+.list .n{font:700 11px var(--font-mono);color:var(--muted)}
+.list small{display:block;color:var(--muted);font-size:11.5px}
+.status-icons{font-size:13px;display:flex;gap:3px;align-items:center}
+.empty{color:var(--muted);font-size:13.5px;padding:8px}
+.note{font-size:12px;color:var(--muted);margin:0}
+
+/* Quest Log List */
+.quest-list{list-style:none;margin:0;padding:0;display:grid;gap:7px;max-height:370px;overflow:auto}
+.quest-card{
+  border:1.5px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 11px;
+  display:grid;gap:4px;cursor:pointer;transition:border-color .15s;
+}
+.quest-card:hover{border-color:var(--accent)}
+.quest-card.done{border-color:#16a34a;background:rgba(22,163,74,.08)}
+.quest-head{display:flex;justify-content:space-between;align-items:center;gap:6px;font:700 13px var(--font-body)}
+.quest-sub{font-size:12px;color:var(--muted)}
+
+/* Modal System */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(12,18,15,.72);backdrop-filter:blur(3px);
+  display:grid;place-items:center;padding:16px;z-index:100;
+}
+.modal-backdrop[hidden]{display:none!important}
+.modal{
+  background:var(--panel);color:var(--ink);border:3px solid var(--frame);
+  box-shadow:8px 8px 0 rgba(0,0,0,.35);border-radius:14px;max-width:520px;width:100%;
+  padding:20px;max-height:90vh;overflow:auto;position:relative;
+}
+.modal-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
+.modal-title{font:800 22px/1.15 var(--font-display);margin:4px 0 0}
+.modal-close{
+  border:1.5px solid var(--line);background:var(--bg);color:var(--ink);
+  width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;
+}
+.modal-body{display:grid;gap:14px;font-size:14.5px}
+
+/* Mini-game Specific Styles */
+.quiz-options{display:grid;gap:8px}
+.quiz-btn{
+  text-align:left;padding:11px 14px;border:2px solid var(--line);background:var(--bg);
+  color:var(--ink);border-radius:8px;font:600 14px var(--font-body);cursor:pointer;
+  transition:border-color .15s,background .15s;
+}
+.quiz-btn:hover{border-color:var(--accent)}
+.quiz-btn.correct{border-color:#16a34a;background:#dcfce7;color:#14532d}
+.quiz-btn.wrong{border-color:#dc2626;background:#fee2e2;color:#7f1d1d}
+
+/* IT Bug Terminal */
+.terminal-box{
+  background:#0f172a;color:#38bdf8;font-family:var(--font-mono);padding:12px;
+  border-radius:10px;border:2px solid #334155;position:relative;height:230px;overflow:hidden;
+  user-select:none;
+}
+.terminal-hud{display:flex;justify-content:space-between;font-size:12.5px;border-bottom:1px solid #334155;padding-bottom:6px;margin-bottom:8px;color:#cbd5e1}
+.bug-target{
+  position:absolute;font-size:26px;cursor:pointer;background:rgba(239,68,68,.2);
+  border:1.5px solid #ef4444;border-radius:8px;padding:4px 8px;transition:transform .1s;
+  display:flex;align-items:center;gap:4px;color:#fca5a5;font-size:13px;
+}
+.bug-target:active{transform:scale(.85)}
+
+/* Memory Cards (Museum A-6) */
+.memory-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mem-card{
+  aspect-ratio:1;border:2px solid var(--frame);border-radius:10px;background:var(--accent);
+  color:var(--accent-ink);font-size:28px;display:grid;place-items:center;cursor:pointer;
+  font-weight:700;transition:transform .15s,background .15s;
+}
+.mem-card.flipped,.mem-card.matched{background:var(--bg);color:var(--ink)}
+.mem-card.matched{border-color:#16a34a;background:#dcfce7}
+
+/* Football Penalty Bar */
+.pitch-game{
+  background:#15803d;border:3px solid #14532d;border-radius:12px;padding:18px;
+  color:#fff;text-align:center;display:grid;gap:14px;
+}
+.power-bar{
+  height:26px;background:#052e16;border:2px solid #fff;border-radius:99px;
+  position:relative;overflow:hidden;
+}
+.sweet-spot{
+  position:absolute;top:0;bottom:0;left:38%;width:24%;
+  background:#22c55e;border-left:2px solid #fff;border-right:2px solid #fff;
+}
+.power-cursor{
+  position:absolute;top:0;bottom:0;width:10px;background:#ffd35a;
+  box-shadow:0 0 8px #ffd35a;transform:translateX(-50%);
+}
+
+/* Canteen Tray */
+.food-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.food-item{
+  border:2px solid var(--line);background:var(--bg);padding:10px;border-radius:8px;
+  display:flex;align-items:center;gap:10px;cursor:pointer;font:600 13.5px var(--font-body);
+}
+.food-item.picked{border-color:#16a34a;background:#dcfce7;color:#14532d}
+
+.feedback-msg{
+  padding:10px 12px;border-radius:8px;font-weight:600;font-size:13.5px;
+  background:var(--bg);border:1.5px solid var(--line);
+}
+.feedback-msg.ok{background:#dcfce7;color:#14532d;border-color:#16a34a}
+.feedback-msg.err{background:#fee2e2;color:#7f1d1d;border-color:#dc2626}
+
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top-header">
+    <div>
+      <h1>
+        Bản đồ Đại học Nha Trang
+        <span class="title-pill">🎮 NTU LIFE RPG 2.0</span>
+      </h1>
+      <p class="sub">Khám phá 35 địa điểm từ bờ biển Phạm Văn Đồng lên đỉnh đồi Thư viện: trải nghiệm leo dốc NTU, chọn Hệ Sinh viên, điều khiển Flycam, chụp Postcard kỷ niệm và chinh phục giải chạy NTU Campus Trail!</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-util" id="btnWeather" title="Đổi thời gian & thời tiết trên bản đồ">☀️ Ban ngày</button>
+      <button type="button" class="btn-util" id="btnDrone" title="Bật/Tắt Flycam bay tự do xuyên địa hình (Phím F)">🚁 Flycam: Tắt</button>
+      <button type="button" class="btn-util" id="btnPostcard" title="Chụp ảnh Postcard Pixel-Art tại vị trí hiện tại (Phím P)">📸 Chụp Postcard</button>
+      <button type="button" class="btn-util" id="btnTrail" title="Bắt đầu giải chạy bộ vượt đồi NTU Campus Trail">🏅 Giải chạy Trail</button>
+      <button type="button" class="btn-util" id="btnSound" aria-label="Bật/Tắt âm thanh">🔊 Âm thanh: Bật</button>
+      <button type="button" class="btn-util" id="btnGuide">📖 Sổ tay</button>
+      <button type="button" class="btn-util" id="btnReset">🔄 Chơi lại</button>
+    </div>
+  </header>
+
+  <!-- Thanh chọn Hệ Chuyên Ngành (Class System) & Trạng thái Buff -->
+  <section class="rpg-bar" aria-label="Hệ chuyên ngành sinh viên NTU">
+    <div class="rpg-group" id="classBar">
+      <span class="rpg-label">🎓 Hệ Sinh Viên:</span>
+      <button type="button" class="class-pill active" data-cls="it" title="Mở khóa Dịch chuyển Wi-Fi tới mọi tòa nhà đã Check-in">💻 Chiến thần IT</button>
+      <button type="button" class="class-pill" data-cls="media" title="Tặng sẵn quyền bay Flycam + X2 điểm thưởng khi chụp Postcard">📸 Nhiếp ảnh Media</button>
+      <button type="button" class="class-pill" data-cls="runner" title="Stamina tối đa 150 + Miễn giảm tốc khi leo dốc đồi Thư viện">🏃 Runner NTU Trail</button>
+      <button type="button" class="class-pill" data-cls="ocean" title="Tự động hiện gợi ý câu đố ở các Trạm + Tăng tốc gần Biển">🌊 Thám hiểm Đại dương</button>
+    </div>
+    <div class="rpg-group" id="activeBuffsBar">
+      <span class="rpg-label" id="classPassiveText">✨ Nội tại: Dịch chuyển Wi-Fi tới nơi đã Check-in</span>
+    </div>
+  </section>
+
+  <!-- Bảng theo dõi Giải chạy NTU Campus Trail (Hiện khi đang đua) -->
+  <section class="trail-banner" id="trailBanner" hidden>
+    <div class="trail-stat">
+      <span>🏃 <strong>NTU CAMPUS TRAIL</strong></span>
+      <span id="trailCpText">Trạm: 1 / 6 (Cổng chính)</span>
+      <span id="trailTimerText">⏱ 00:00.0</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button type="button" class="btn-util" id="btnTrailGuide" style="background:#ffd35a;color:#111;border-color:#111">🧭 Chỉ đường CP</button>
+      <button type="button" class="btn-util" id="btnTrailStop" style="background:#dc2626;color:#fff;border-color:#fff">✕ Hủy chạy</button>
+    </div>
+  </section>
+
+  <!-- Thanh HUD Trạng thái Game -->
+  <section class="hud" aria-label="Bảng trạng thái sinh viên">
+    <div class="hud-item">
+      <div class="hud-label">
+        <span>Điểm Năng Động</span>
+        <span id="hudXpText">0 XP</span>
+      </div>
+      <div class="hud-val">
+        <span id="hudRank" class="rank-badge">Tân sinh viên</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill xp" id="barXp" style="width:0%"></div></div>
+    </div>
+
+    <div class="hud-item">
+      <div class="hud-label">
+        <span>Địa hình & Độ cao</span>
+        <span id="hudElevText">⛰️ 12m</span>
+      </div>
+      <div class="hud-val" style="font-size:13px;font-weight:700" id="hudSlopeText">➡️ Đường bằng</div>
+      <div style="font-size:11px;color:var(--muted)" id="hudSurfaceText">🌊 Sóng biển: Nhẹ</div>
+    </div>
+
+    <div class="hud-item">
+      <div class="hud-label">
+        <span>Trạm & Check-in</span>
+        <span id="hudQuestText">0/8 Trạm · 0/35 ĐĐ</span>
+      </div>
+      <div class="hud-val">🎯 <span id="hudQuestSub" style="font-size:13px;font-weight:600">0% hoàn thành</span></div>
+      <div class="bar-track"><div class="bar-fill quest" id="barQuest" style="width:0%"></div></div>
+    </div>
+
+    <div class="hud-item">
+      <div class="hud-label">
+        <span>Thể lực (Stamina)</span>
+        <span id="hudStaminaText">100 / 100</span>
+      </div>
+      <div class="hud-val" style="font-size:12px;font-weight:600;color:var(--muted)" id="staminaHint">Giữ Shift để chạy nhanh</div>
+      <div class="bar-track"><div class="bar-fill stamina" id="barStamina" style="width:100%"></div></div>
+    </div>
+
+    <div class="hud-controls">
+      <button type="button" class="btn-hud" id="btnNextQuest" title="Tự động tìm đường đến trạm thử thách gần nhất chưa hoàn thành">
+        🧭 Trạm kế tiếp
+      </button>
+      <button type="button" class="btn-hud secondary" id="btnSprintToggle" title="Bật/Tắt chế độ chạy nước rút (Phím Shift)">
+        ⚡ Chạy nhanh
+      </button>
+    </div>
+  </section>
+
+  <div class="layout">
+    <div>
+      <div class="stage" id="stage">
+        <canvas id="cv" width="448" height="392" tabindex="0" aria-label="Bản đồ khuôn viên Đại học Nha Trang"></canvas>
+        <div class="compass" aria-hidden="true">B</div>
+        <!-- Thanh tương tác nhanh khi đứng gần địa điểm hoặc Mèo Canteen -->
+        <div class="map-prompt" id="mapPrompt" hidden>
+          <span id="promptText">Đang đứng gần: Cổng chính</span>
+          <button type="button" id="promptCheckinBtn">📍 Check-in (+20 XP)</button>
+          <button type="button" id="promptQuestBtn" class="quest-btn" hidden>🎯 Thử thách</button>
+          <button type="button" id="promptCatBtn" style="background:#f472b6;color:#111" hidden>🐱 Nựng mèo (+25 XP)</button>
+        </div>
+      </div>
+
+      <div class="controls-bar">
+        <div class="hint">
+          <span>Di chuyển: <kbd>WASD</kbd>/<kbd>↑↓←→</kbd></span>
+          <span>Chạy: <kbd>Shift</kbd></span>
+          <span>Tương tác: <kbd>Space</kbd>/<kbd>E</kbd></span>
+          <span>Flycam: <kbd>F</kbd></span>
+          <span>Chụp ảnh: <kbd>P</kbd></span>
+        </div>
+      </div>
+
+      <div class="dpad-wrap" aria-label="Điều khiển cảm ứng">
+        <div class="dpad">
+          <button type="button" class="u" data-k="up" aria-label="Lên">▲</button>
+          <button type="button" class="l" data-k="left" aria-label="Trái">◀</button>
+          <button type="button" class="d" data-k="down" aria-label="Xuống">▼</button>
+          <button type="button" class="r" data-k="right" aria-label="Phải">▶</button>
+        </div>
+        <div class="mobile-actions">
+          <button type="button" id="mobileActBtn">📍 Check-in / Tương tác</button>
+          <button type="button" id="mobileQuestNavBtn" style="background:var(--panel);color:var(--ink)">🧭 Chỉ đường Trạm kế</button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="side">
+      <section class="card" id="info" aria-live="polite"></section>
+
+      <section class="card">
+        <div class="side-tabs" role="tablist">
+          <button type="button" class="side-tab active" id="tabBtnPlaces" role="tab" aria-selected="true">🏢 35 Địa điểm</button>
+          <button type="button" class="side-tab" id="tabBtnQuests" role="tab" aria-selected="false">🎯 8 Trạm</button>
+          <button type="button" class="side-tab" id="tabBtnLife" role="tab" aria-selected="false">🍱 Canteen & Mèo</button>
+        </div>
+
+        <!-- Tab 1: Tìm kiếm & Danh sách 35 Địa điểm gốc -->
+        <div id="panelPlaces">
+          <input id="q" type="search" placeholder="Tìm tòa nhà hoặc khoa, ví dụ: Công nghệ Thông tin" autocomplete="off">
+          <div class="chips" id="chips"></div>
+          <ul class="list" id="list"></ul>
+        </div>
+
+        <!-- Tab 2: Danh sách 8 Trạm Thử Thách -->
+        <div id="panelQuests" hidden>
+          <ul class="quest-list" id="questListEl"></ul>
+        </div>
+
+        <!-- Tab 3: Menu Nhà ăn (Canteen Buffs) & Góc Sống Ảo / Mèo NTU -->
+        <div id="panelLife" hidden>
+          <div class="shop-list" id="canteenShopEl"></div>
+        </div>
+      </section>
+
+      <p class="note">💡 <strong>Đặc sản NTU:</strong> Leo dốc lên <strong>Thư viện</strong> hay <strong>KTX K-8</strong> sẽ tốn sức hơn nhưng đổ dốc về phía biển cực kỳ lướt! Chọn hệ <strong>💻 Chiến thần IT</strong> để dịch chuyển tức thời tới các tòa nhà đã Check-in.</p>
+    </aside>
+  </div>
+</div>
+
+<!-- Modal Thử Thách, Postcard & Sổ tay -->
+<div class="modal-backdrop" id="modalBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-header">
+      <div>
+        <span class="badge quest" id="modalBadge">TRẠM THỬ THÁCH</span>
+        <h3 class="modal-title" id="modalTitle">Tiêu đề Thử thách</h3>
+      </div>
+      <button type="button" class="modal-close" id="modalCloseBtn" aria-label="Đóng">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+/* ============================================================================
+   1. DỮ LIỆU BẢN ĐỒ GỐC & CƠ CHẾ VẼ PIXEL-ART (GIỮ NGUYÊN 100%)
+   ============================================================================ */
+var AW=448,AH=392,AS=1500/448,Y0=40,CS=2,GW=AW/CS,GH=AH/CS;
+function X(x){return x/AS;}
+function Y(y){return (y-Y0)/AS;}
+function R(a){var x0=Math.round(X(a[0])),y0=Math.round(Y(a[1])),x1=Math.round(X(a[2])),y1=Math.round(Y(a[3]));
+  return {x:x0,y:y0,w:Math.max(3,x1-x0),h:Math.max(3,y1-y0)};}
+
+var TYPES={gate:'Cổng',lecture:'Giảng đường',dorm:'Ký túc xá',dept:'Khoa & Viện',admin:'Hành chính',library:'Thư viện',meeting:'Hội trường',sport:'Thể thao',service:'Dịch vụ'};
+var COL={G:'#8a5580',K:'#ffc84a',B:'#b5482a',M:'#8e2f16',HT:'#e224d6',C:'#12b5d5'};
+var D_LEC='Giảng đường, theo chú giải G-1 đến G-8 trên sơ đồ.';
+var D_DORM='Ký túc xá, theo chú giải K-1 đến K-8 trên sơ đồ.';
+var D_HT='Hội trường, theo chú giải HT-1 và HT-3 trên sơ đồ.';
+var D_NONE='Sơ đồ không ghi chú chức năng của khu này.';
+var D_DEPT='Khu nhà của các khoa, viện (theo bảng liệt kê trên sơ đồ).';
+
+/* Tọa độ parts tính theo pixel của ảnh sơ đồ gốc; [x0,y0,x1,y1] */
+var PLACES=[
+ {id:'gate',short:'Cổng chính',name:'Cổng chính',type:'gate',lm:1,kind:'gate',parts:[[487,580,504,612],[528,538,546,574]],ex:515,ey:562,desc:'Lối vào chính của trường, từ đường Nguyễn Đình Chiểu (số 02).'},
+ {id:'a3',short:'A-3',name:'Tòa A-3',type:'dept',col:COL.B,parts:[[522,490,572,528]],desc:D_DEPT,units:[['Khoa Kinh tế','tầng 1'],['Khoa Sau đại học','tầng 2']]},
+ {id:'a4',short:'A-4',name:'Tòa A-4',type:'dept',col:COL.B,parts:[[548,528,600,562]],desc:D_NONE},
+ {id:'ht3',short:'HT-3',name:'Hội trường HT-3',type:'meeting',col:COL.HT,parts:[[65,430,170,468],[65,468,102,520]],desc:D_HT,units:[['Viện Khoa học Biển và Công nghệ Khai thác Thủy sản','tầng 2']]},
+ {id:'a5',short:'A-5',name:'Tòa A-5',type:'dept',col:COL.K,parts:[[88,650,325,712],[105,580,142,650],[188,580,225,650],[275,598,310,650]],desc:D_NONE},
+ {id:'k7',short:'K-7',name:'Ký túc xá K-7',type:'dorm',col:COL.K,parts:[[45,723,112,770],[75,770,150,805],[28,790,75,840]],desc:D_DORM},
+ {id:'g7',short:'G-7',name:'Giảng đường G-7',type:'lecture',col:COL.G,parts:[[205,785,300,825],[260,760,300,790],[295,805,345,850]],desc:D_LEC},
+ {id:'g6',short:'G-6',name:'Giảng đường G-6',type:'lecture',col:COL.G,parts:[[345,875,400,912],[380,900,460,935],[430,918,495,952]],desc:D_LEC,units:[['Khoa Công nghệ Thông tin','tầng 2']]},
+ {id:'g5',short:'G-5',name:'Giảng đường G-5',type:'lecture',col:COL.G,parts:[[517,906,630,938]],desc:D_LEC},
+ {id:'g4',short:'G-4',name:'Giảng đường G-4',type:'lecture',col:COL.G,parts:[[578,995,697,1030]],desc:D_LEC},
+ {id:'ht1',short:'HT-1',name:'Hội trường HT-1',type:'meeting',col:COL.HT,parts:[[737,1007,812,1040]],desc:D_HT},
+ {id:'main',short:'Tòa nhà chính',name:'Tòa nhà chính (Main building)',type:'admin',lm:1,col:COL.M,parts:[[680,835,925,872]],desc:'Tất cả các phòng ban hành chính của trường đặt ở đây, theo chú giải trên sơ đồ.'},
+ {id:'a2',short:'A-2',name:'Tòa A-2',type:'dept',col:COL.B,parts:[[890,872,925,935],[890,935,1090,975]],desc:D_DEPT,units:[['Khoa Xây dựng','tầng 1'],['Viện Công nghệ Sinh học và Môi trường','tầng 1']]},
+ {id:'b3',short:'B-3',name:'Tòa B-3',type:'dept',col:COL.B,parts:[[1085,815,1145,862],[1065,862,1105,938]],desc:D_DEPT,units:[['Khoa Công nghệ Thực phẩm','tầng 1'],['Khoa Điện – Điện tử','tầng 1'],['Viện Nuôi trồng Thủy sản','tầng 3']]},
+ {id:'g3',short:'G-3',name:'Giảng đường G-3',type:'lecture',col:COL.G,parts:[[1145,878,1320,915]],desc:D_LEC},
+ {id:'k6',short:'K-6',name:'Ký túc xá K-6',type:'dorm',col:COL.K,parts:[[1385,808,1428,862]],desc:D_DORM},
+ {id:'g1',short:'G-1',name:'Giảng đường G-1',type:'lecture',col:COL.G,parts:[[1195,482,1320,540]],desc:D_LEC,units:[['Khoa Cơ khí','tầng 1'],['Khoa Ngoại ngữ','tầng 2'],['Khoa Kế toán – Tài chính','tầng 3']]},
+ {id:'g2',short:'G-2',name:'Giảng đường G-2',type:'lecture',col:COL.G,parts:[[1280,602,1335,650],[1265,650,1372,718]],desc:D_LEC,units:[['Khoa Lý luận Chính trị','tầng 1']]},
+ {id:'a7',short:'A-7',name:'Tòa A-7',type:'dept',col:COL.C,parts:[[1160,598,1268,697]],desc:D_DEPT,units:[['Trung tâm Nghiên cứu Sức khỏe và Giống Động vật Thủy sản','']]},
+ {id:'pitch',short:'Sân bóng đá',name:'Sân bóng đá (Football field)',type:'sport',lm:1,kind:'pitch',parts:[[985,543,1135,722]],desc:'Sân bóng đá của trường.'},
+ {id:'gym',short:'Nhà thi đấu',name:'Nhà thi đấu (Gymnasium)',type:'sport',lm:1,kind:'gym',parts:[[815,575,955,740]],desc:'Nhà thi đấu của trường, nằm cạnh sân bóng đá.'},
+ {id:'a6',short:'A-6',name:'Tòa A-6',type:'dept',col:COL.C,parts:[[775,623,825,670]],desc:D_DEPT,units:[['Bảo tàng Động – Thực vật Thủy sinh','']]},
+ {id:'g8',short:'G-8',name:'Giảng đường G-8',type:'lecture',col:COL.G,parts:[[600,563,725,595]],desc:D_LEC},
+ {id:'b1',short:'B-1',name:'Tòa B-1',type:'dept',col:COL.B,parts:[[662,672,725,700]],desc:D_NONE},
+ {id:'a8',short:'A-8',name:'Tòa A-8',type:'dept',col:COL.B,parts:[[695,705,728,798]],desc:D_DEPT,units:[['Khoa Đào tạo Tại chức','']]},
+ {id:'canteen',short:'Nhà ăn',name:'Nhà ăn (Canteen)',type:'service',lm:1,col:COL.B,parts:[[690,395,780,420],[735,368,782,395]],desc:'Nhà ăn của trường.'},
+ {id:'k8',short:'K-8',name:'Ký túc xá K-8',type:'dorm',col:COL.K,parts:[[838,255,912,300],[800,285,880,330],[780,320,850,358]],desc:D_DORM},
+ {id:'k1',short:'K-1',name:'Ký túc xá K-1',type:'dorm',col:COL.K,parts:[[908,305,975,370]],desc:D_DORM},
+ {id:'k2',short:'K-2',name:'Ký túc xá K-2',type:'dorm',col:COL.K,parts:[[815,368,880,398]],desc:D_DORM},
+ {id:'k3',short:'K-3',name:'Ký túc xá K-3',type:'dorm',col:COL.K,parts:[[782,425,898,455]],desc:D_DORM},
+ {id:'k4',short:'K-4',name:'Ký túc xá K-4',type:'dorm',col:COL.K,parts:[[782,473,898,503]],desc:D_DORM},
+ {id:'k5',short:'K-5',name:'Ký túc xá K-5',type:'dorm',col:COL.K,parts:[[655,420,688,475],[585,475,718,508]],desc:D_DORM},
+ {id:'x3',short:'X-3',name:'Tòa X-3',type:'dept',col:COL.B,parts:[[920,375,1000,415],[990,385,1065,432]],desc:D_DEPT,units:[['Khoa Kỹ thuật Giao thông','tầng 1']]},
+ {id:'x1',short:'X-1',name:'Tòa X-1',type:'dept',col:COL.C,parts:[[1075,415,1130,450],[1105,450,1170,487]],desc:D_NONE},
+ {id:'lib',short:'Thư viện',name:'Thư viện (TV-2, TV-3, TV-4)',type:'library',lm:1,col:COL.B,parts:[[1100,268,1160,320],[1085,315,1125,355],[1150,350,1230,410],[1200,293,1310,345],[1270,345,1312,402]],circle:[1312,353,27],desc:'Thư viện của trường gồm ba tòa TV-2, TV-3 và TV-4, theo chú giải trên sơ đồ.'}
+];
+var DECOR=[
+ {parts:[[105,845,193,922]],col:'#a33b1d'},
+ {parts:[[830,1005,963,1043]],col:COL.C},
+ {parts:[[960,845,1008,905],[975,905,995,935]],col:'#35b6e0',water:1}
+];
+
+PLACES.forEach(function(p){
+  p.rects=p.parts.map(R);
+  var x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  p.rects.forEach(function(r){x0=Math.min(x0,r.x);y0=Math.min(y0,r.y);x1=Math.max(x1,r.x+r.w);y1=Math.max(y1,r.y+r.h);});
+  p.bb={x0:x0,y0:y0,x1:x1,y1:y1};
+  var big=p.rects.slice().sort(function(a,b){return b.w*b.h-a.w*a.h;})[0];
+  if(p.ex===undefined){p.axe=big.x+big.w/2;p.aye=big.y+big.h+3;}else{p.axe=X(p.ex);p.aye=Y(p.ey);}
+});
+DECOR.forEach(function(d){d.rects=d.parts.map(R);});
+
+/* ---------- lớp vẽ sắc nét (ngưỡng alpha) ---------- */
+function mk(w,h){var c=document.createElement('canvas');c.width=w;c.height=h;return c;}
+function crisp(draw,color){
+  var c=mk(AW,AH),g=c.getContext('2d');draw(g);
+  var im=g.getImageData(0,0,AW,AH),d=im.data,n=parseInt(color.slice(1),16),r=n>>16,gg=(n>>8)&255,b=n&255;
+  for(var i=0;i<d.length;i+=4){var a=d[i+3]>=110?255:0;d[i]=r;d[i+1]=gg;d[i+2]=b;d[i+3]=a;}
+  g.putImageData(im,0,0);return c;
+}
+function alphaOf(c){return c.getContext('2d').getImageData(0,0,AW,AH).data;}
+function poly(g,pts){pts.forEach(function(p,i){var x=X(p[0]),y=Y(p[1]);if(i)g.lineTo(x,y);else{g.beginPath();g.moveTo(x,y);}});g.closePath();}
+function line(g,pts,w){g.lineWidth=w/AS;g.lineCap='round';g.lineJoin='round';g.beginPath();pts.forEach(function(p,i){var x=X(p[0]),y=Y(p[1]);if(i)g.lineTo(x,y);else g.moveTo(x,y);});g.stroke();}
+
+var CAMPUS=[[125,345],[255,440],[360,480],[455,530],[700,385],[1000,240],[1090,200],[1110,232],[1190,266],[1300,296],[1385,338],[1420,395],[1405,430],[1355,520],[1360,550],[1440,605],[1478,650],[1480,720],[1462,800],[1457,940],[1300,1010],[1100,1085],[900,1135],[805,1150],[400,1015],[60,905],[18,880],[12,780],[14,620],[35,500],[70,410]];
+var SEA=[[730,1272],[1000,1245],[1300,1175],[1500,1085],[1500,950],[1300,1065],[1090,1155],[900,1215]];
+var OUTER=[
+ [[118,318],[250,425],[330,462],[440,505],[1095,180],[1300,122],[1495,66]],
+ [[0,905],[300,1005],[580,1105],[800,1175]],
+ [[545,1250],[800,1185],[1090,1135],[1300,1045],[1500,935]],
+ [[580,1105],[612,1160],[592,1215],[545,1250]],
+ [[545,1250],[430,1295]]
+];
+var INNER=[
+ [[495,590],[560,572],[640,555],[730,538]],
+ [[730,538],[850,522],[957,518],[1060,516],[1145,520]],
+ [[1145,520],[1280,555],[1350,605],[1425,670],[1445,760],[1452,930]],
+ [[1148,520],[1148,740]],
+ [[750,752],[1000,745],[1250,740],[1385,752]],
+ [[730,538],[725,640],[735,800]],
+ [[957,518],[962,640],[975,800]],
+ [[665,812],[900,805],[1100,800],[1310,792]],
+ [[957,518],[920,440],[885,350]],
+ [[957,518],[1040,440],[1100,380]],
+ [[1100,375],[1160,405],[1285,425]],
+ [[1100,375],[1070,320],[1110,235]],
+ [[1195,430],[1170,520]],
+ [[520,590],[600,640],[655,700],[675,780],[690,880],[710,945],[790,982]],
+ [[155,520],[300,565],[350,610],[357,720],[350,870],[310,935],[330,962],[500,962],[700,962],[790,982]],
+ [[240,430],[205,520]],
+ [[150,800],[260,880],[350,945]],
+ [[1100,968],[1290,968],[1335,925],[1325,860],[1340,800]],
+ [[1330,852],[1385,853]]
+];
+var seaL=crisp(function(g){poly(g,SEA);g.fill();},'#4a9fd0');
+var roadOutEdge=crisp(function(g){OUTER.forEach(function(p){line(g,p,50);});},'#6d7076');
+var roadOut=crisp(function(g){OUTER.forEach(function(p){line(g,p,42);});},'#9a9ea4');
+var campusL=crisp(function(g){poly(g,CAMPUS);g.fill();},'#b9de9f');
+var dashL=crisp(function(g){g.lineWidth=1.3;g.setLineDash([2,2]);poly(g,CAMPUS);g.stroke();},'#56664d');
+function clipped(draw,color){return crisp(function(g){draw(g);g.globalCompositeOperation='destination-in';g.drawImage(campusL,0,0);},color);}
+var pathEdge=clipped(function(g){INNER.forEach(function(p){line(g,p,25);});},'#c2b48c');
+var pathL=clipped(function(g){INNER.forEach(function(p){line(g,p,19);});},'#dfd3b0');
+var campusA=alphaOf(campusL),pathA=alphaOf(pathL),seaA=alphaOf(seaL);
+function inCampus(x,y){x=Math.floor(x);y=Math.floor(y);return x>=0&&y>=0&&x<AW&&y<AH&&campusA[(y*AW+x)*4+3]>0;}
+
+/* ---------- lưới chắn ---------- */
+var blocked=new Uint8Array(GW*GH);
+(function(){for(var cy=0;cy<GH;cy++)for(var cx=0;cx<GW;cx++)if(!inCampus(cx*CS+1,cy*CS+1))blocked[cy*GW+cx]=1;})();
+function markRect(r){
+  for(var cy=Math.floor(r.y/CS);cy<=Math.floor((r.y+r.h-1)/CS);cy++)for(var cx=Math.floor(r.x/CS);cx<=Math.floor((r.x+r.w-1)/CS);cx++){
+    if(cx<0||cy<0||cx>=GW||cy>=GH)continue;
+    var px=cx*CS+1,py=cy*CS+1;
+    if(px>=r.x&&px<r.x+r.w&&py>=r.y&&py<r.y+r.h)blocked[cy*GW+cx]=1;
+  }
+}
+function markCircle(cx0,cy0,rad){
+  for(var cy=0;cy<GH;cy++)for(var cx=0;cx<GW;cx++){
+    var dx=cx*CS+1-cx0,dy=cy*CS+1-cy0;if(dx*dx+dy*dy<=rad*rad)blocked[cy*GW+cx]=1;
+  }
+}
+function rectFree(x,y,w,h){
+  for(var py=y;py<y+h;py+=CS)for(var px=x;px<x+w;px+=CS){
+    var cx=Math.floor(px/CS),cy=Math.floor(py/CS);
+    if(cx<0||cy<0||cx>=GW||cy>=GH||blocked[cy*GW+cx])return false;
+  }
+  return true;
+}
+PLACES.forEach(function(p){p.rects.forEach(markRect);if(p.circle)markCircle(X(p.circle[0]),Y(p.circle[1]),p.circle[2]/AS);});
+DECOR.forEach(function(d){d.rects.forEach(markRect);});
+
+/* ---------- cây ---------- */
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+var rand=rng(20261102),trees=[];
+var CL=[[150,540,70,25,5],[210,735,90,35,8],[470,805,105,55,16],[290,925,50,25,4],[385,968,35,25,4],[510,1010,30,25,3],[745,1085,60,40,6],[905,1095,85,35,7],[1040,1040,50,30,4],[1230,985,90,25,7],[1115,1005,40,25,3],[1025,260,55,50,6],[1285,445,40,30,4],[1370,415,35,15,3],[595,630,45,90,6],[610,760,15,75,4],[1030,765,280,12,10],[1350,890,15,45,3]];
+function nearEntry(x,y){
+  if(Math.hypot(x-X(560),y-Y(600))<12)return true;
+  for(var i=0;i<PLACES.length;i++){if(Math.hypot(x+3-PLACES[i].axe,y+8-PLACES[i].aye)<8)return true;}
+  return false;
+}
+CL.forEach(function(c){
+  var placed=0,tries=0;
+  while(placed<c[4]&&tries<120){
+    tries++;
+    var ang=rand()*6.2832,rr=Math.sqrt(rand());
+    var ax=Math.round(X(c[0]+Math.cos(ang)*rr*c[2])),ay=Math.round(Y(c[1]+Math.sin(ang)*rr*c[3]));
+    if(!inCampus(ax+3,ay+7)||nearEntry(ax,ay))continue;
+    if(pathA[(Math.min(AH-1,ay+7)*AW+ax+3)*4+3])continue;
+    if(!rectFree(ax,ay+2,7,6))continue;
+    trees.push({x:ax,y:ay,v:rand()<.5?0:1});markRect({x:ax+2,y:ay+5,w:3,h:3});placed++;
+  }
+});
+trees.sort(function(a,b){return a.y-b.y;});
+
+/* ---------- vẽ nền ---------- */
+function shade(hex,f){var n=parseInt(hex.slice(1),16),r=n>>16,g=(n>>8)&255,b=n&255,m=f<0?0:255,t=Math.abs(f);
+  return 'rgb('+Math.round(r+(m-r)*t)+','+Math.round(g+(m-g)*t)+','+Math.round(b+(m-b)*t)+')';}
+function drawRect(c,r,col){
+  var x=r.x,y=r.y,w=r.w,h=r.h,wall=h>=9?Math.min(4,Math.floor(h/3)):0,roof=h-wall;
+  c.fillStyle='rgba(0,0,0,.2)';c.fillRect(x+1,y+h,w,2);
+  c.fillStyle=col;c.fillRect(x,y,w,roof);
+  c.fillStyle=shade(col,.28);c.fillRect(x,y,w,1);
+  if(roof>=7){c.fillStyle=shade(col,-.14);for(var ty=y+3;ty<y+roof-1;ty+=3)c.fillRect(x+1,ty,w-2,1);}
+  c.fillStyle=shade(col,-.4);c.fillRect(x,y+roof-1,w,1);
+  if(wall){c.fillStyle='#f0e4c8';c.fillRect(x,y+roof,w,wall);
+    c.fillStyle='#5b8fb9';for(var wx=x+2;wx<x+w-3;wx+=4)c.fillRect(wx,y+roof+1,2,Math.max(1,wall-2));}
+  c.strokeStyle='#2b2a26';c.lineWidth=1;c.strokeRect(x+.5,y+.5,w-1,h-1);
+}
+var stat=mk(AW,AH),sc=stat.getContext('2d');
+sc.fillStyle='#ebe8dd';sc.fillRect(0,0,AW,AH);
+sc.drawImage(seaL,0,0);sc.drawImage(roadOutEdge,0,0);sc.drawImage(roadOut,0,0);
+sc.drawImage(campusL,0,0);
+(function(){
+  var tr=rng(99),i,x,y;
+  for(i=0;i<1100;i++){x=Math.floor(tr()*AW);y=Math.floor(tr()*AH);if(inCampus(x,y)&&!pathA[(y*AW+x)*4+3]){sc.fillStyle=tr()<.5?'#a3cf88':'#c6e6ad';sc.fillRect(x,y,1,tr()<.5?2:1);}}
+  var fl=['#fbe3ec','#fff1a8','#ffffff','#f6a9c2'];
+  for(i=0;i<260;i++){x=Math.floor(tr()*AW);y=Math.floor(tr()*AH);if(inCampus(x,y)&&!pathA[(y*AW+x)*4+3]){sc.fillStyle=fl[Math.floor(tr()*4)];sc.fillRect(x,y,1,1);}}
+})();
+sc.drawImage(dashL,0,0);sc.drawImage(pathEdge,0,0);sc.drawImage(pathL,0,0);
+(function(){
+  var r=R([405,668,520,755]);sc.fillStyle='#78b78a';sc.fillRect(r.x,r.y,r.w,r.h);sc.fillStyle='#5f9f74';sc.fillRect(r.x,r.y,r.w,1);sc.fillRect(r.x,r.y+r.h-1,r.w,1);
+  [[770,850],[875,950],[1015,1090],[1122,1200],[1225,1290]].forEach(function(s){
+    var x0=Math.round(X(s[0])),x1=Math.round(X(s[1])),yy=Math.round(Y(806));
+    sc.fillStyle='#2f8f4e';sc.fillRect(x0+1,yy,x1-x0-2,3);sc.fillRect(x0,yy+1,x1-x0,1);sc.fillStyle='#4aae6a';sc.fillRect(x0+2,yy,x1-x0-4,1);
+  });
+})();
+function drawPitch(c,r){
+  c.fillStyle='#1a7a45';c.fillRect(r.x,r.y,r.w,r.h);
+  c.strokeStyle='#e8f3e8';c.lineWidth=1;c.strokeRect(r.x+3.5,r.y+3.5,r.w-7,r.h-7);
+  c.fillStyle='#e8f3e8';c.fillRect(r.x+3,r.y+Math.floor(r.h/2),r.w-6,1);
+  c.strokeRect(r.x+Math.floor(r.w/2)-5.5,r.y+Math.floor(r.h/2)-5.5,11,11);
+  c.strokeStyle='#0f5a31';c.strokeRect(r.x+.5,r.y+.5,r.w-1,r.h-1);
+}
+function drawGym(c,r){
+  c.fillStyle='rgba(0,0,0,.2)';c.fillRect(r.x+1,r.y+r.h,r.w,2);
+  c.fillStyle='#146b3c';c.fillRect(r.x,r.y,r.w,r.h);
+  c.fillStyle='#1d8a50';c.fillRect(r.x+8,r.y+8,r.w-16,r.h-16);
+  c.fillStyle='#0f5a31';[[r.x+4,r.y+4],[r.x+r.w-4,r.y+4],[r.x+4,r.y+r.h-4],[r.x+r.w-4,r.y+r.h-4]].forEach(function(p){c.beginPath();c.arc(p[0],p[1],5,0,6.2832);c.fill();});
+  c.strokeStyle='#0a3d21';c.lineWidth=1;c.strokeRect(r.x+.5,r.y+.5,r.w-1,r.h-1);
+}
+function drawGate(c,p){
+  p.rects.forEach(function(r){
+    c.fillStyle='rgba(0,0,0,.25)';c.fillRect(r.x+1,r.y+r.h,r.w,2);
+    c.fillStyle='#b9a27a';c.fillRect(r.x,r.y,r.w,r.h);
+    c.fillStyle='#8f7a55';c.fillRect(r.x,r.y,r.w,1);c.fillRect(r.x+r.w-1,r.y+1,1,r.h-1);
+    c.fillStyle='#c0392b';c.fillRect(r.x+1,r.y+2,r.w-2,3);
+  });
+}
+(function(){
+  var items=[];
+  PLACES.forEach(function(p){items.push({y:p.bb.y1,f:function(){
+    if(p.kind==='gate'){drawGate(sc,p);return;}
+    if(p.kind==='pitch'){drawPitch(sc,p.rects[0]);return;}
+    if(p.kind==='gym'){drawGym(sc,p.rects[0]);return;}
+    p.rects.slice().sort(function(a,b){return (a.y+a.h)-(b.y+b.h);}).forEach(function(r){drawRect(sc,r,p.col);});
+    if(p.circle){var cx=Math.round(X(p.circle[0])),cy=Math.round(Y(p.circle[1])),rad=Math.round(p.circle[2]/AS);
+      sc.fillStyle=shade(p.col,.12);sc.beginPath();sc.arc(cx,cy,rad,0,6.2832);sc.fill();
+      sc.strokeStyle='#2b2a26';sc.lineWidth=1;sc.stroke();
+      sc.fillStyle=shade(p.col,.3);sc.beginPath();sc.arc(cx,cy,rad-4,0,6.2832);sc.fill();}
+  }});});
+  DECOR.forEach(function(d){items.push({y:Math.max.apply(null,d.rects.map(function(r){return r.y+r.h;})),f:function(){
+    d.rects.forEach(function(r){
+      if(d.water){sc.fillStyle='#1f8fb8';sc.fillRect(r.x-1,r.y-1,r.w+2,r.h+2);sc.fillStyle=d.col;sc.fillRect(r.x,r.y,r.w,r.h);}
+      else drawRect(sc,r,d.col);
+    });
+  }});});
+  items.sort(function(a,b){return a.y-b.y;}).forEach(function(it){it.f();});
+})();
+
+function drawTree(c,t){
+  var x=t.x,y=t.y;
+  c.fillStyle='rgba(0,0,0,.2)';c.fillRect(x+1,y+7,6,1);
+  c.fillStyle='#6b4630';c.fillRect(x+3,y+5,2,3);
+  c.fillStyle=t.v?'#3f8f4a':'#357f40';c.fillRect(x,y+1,7,5);c.fillRect(x+1,y,5,1);
+  c.fillStyle=t.v?'#5cae5f':'#4f9f55';c.fillRect(x+1,y+1,3,2);
+}
+
+/* sóng biển */
+var seaPts=[];
+(function(){var r=rng(7);for(var i=0;i<90;i++){var x=Math.floor(r()*AW),y=Math.floor(r()*AH);if(seaA[(y*AW+x)*4+3]&&x<AW-4)seaPts.push([x,y,r()*6]);}})();
+
+/* ============================================================================
+   2. HỆ THỐNG ÂM THANH 8-BIT PROCEDURAL & AMBIENT BIỂN (WEB AUDIO API)
+   ============================================================================ */
+var soundOn=true;
+var audioCtx=null;
+function ensureAudio(){
+  if(!soundOn)return null;
+  try{
+    if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended')audioCtx.resume();
+    return audioCtx;
+  }catch(e){return null;}
+}
+function playTone(freq,dur,type,delay,vol){
+  var ac=ensureAudio();if(!ac)return;
+  try{
+    var osc=ac.createOscillator(),gain=ac.createGain();
+    var start=ac.currentTime+(delay||0);
+    osc.type=type||'triangle';
+    osc.frequency.setValueAtTime(freq,start);
+    gain.gain.setValueAtTime(vol||0.07,start);
+    gain.gain.exponentialRampToValueAtTime(0.001,start+dur);
+    osc.connect(gain);gain.connect(ac.destination);
+    osc.start(start);osc.stop(start+dur);
+  }catch(e){}
+}
+function sfxStep(onPath,isDrone){
+  if(isDrone){playTone(190+Math.random()*30,0.03,'sine',0,0.025);return;}
+  playTone(onPath?310:180,0.035,'triangle',0,0.03);
+}
+function sfxCheckin(){playTone(523.25,0.1,'sine',0);playTone(659.25,0.12,'sine',0.08);playTone(783.99,0.2,'sine',0.16);}
+function sfxQuestWin(){playTone(523.25,0.1,'square',0);playTone(659.25,0.1,'square',0.1);playTone(783.99,0.1,'square',0.2);playTone(1046.5,0.3,'square',0.3);}
+function sfxClick(){playTone(440,0.05,'triangle',0);}
+function sfxError(){playTone(220,0.15,'sawtooth',0);playTone(180,0.2,'sawtooth',0.12);}
+function sfxMeow(){
+  var ac=ensureAudio();if(!ac)return;
+  try{
+    var osc=ac.createOscillator(),g=ac.createGain();
+    var now=ac.currentTime;
+    osc.type='sine';
+    osc.frequency.setValueAtTime(620,now);
+    osc.frequency.linearRampToValueAtTime(920,now+0.12);
+    osc.frequency.linearRampToValueAtTime(540,now+0.34);
+    g.gain.setValueAtTime(0.08,now);
+    g.gain.exponentialRampToValueAtTime(0.001,now+0.36);
+    osc.connect(g);g.connect(ac.destination);
+    osc.start(now);osc.stop(now+0.36);
+  }catch(e){}
+}
+function sfxShutter(){
+  playTone(1200,0.04,'square',0,0.08);
+  playTone(800,0.06,'triangle',0.05,0.07);
+}
+
+/* ============================================================================
+   3. ĐỊA HÌNH ĐỒI DỐC NTU (ELEVATION), THỜI TIẾT, NPC & MÈO CANTEEN
+   ============================================================================ */
+/* Tính độ cao (m so với mực nước biển) theo tọa độ bản đồ:
+   Đỉnh đồi cao nhất nằm ở phía Bắc/Đông Bắc (K-8, K-1, Thư viện TV, Nhà ăn) ~ 68m;
+   Thấp dần về phía Nam/Đông Nam (Đường Phạm Văn Đồng & Biển) ~ 4m. */
+function getElevation(px,py){
+  var hillX=X(980),hillY=Y(290);
+  var dHill=Math.hypot(px-hillX,py-hillY);
+  var hillPeak=Math.max(0,52-dHill*0.26);
+  var baseSlope=Math.max(0,(AH-py)*0.09);
+  var elev=Math.round(4+baseSlope+hillPeak);
+  return Math.max(3,Math.min(68,elev));
+}
+
+/* 4 Chế độ Thời gian & Thời tiết */
+var WEATHER_MODES=[
+  {id:'day',label:'☀️ Ban ngày'},
+  {id:'sunset',label:'🌅 Hoàng hôn'},
+  {id:'night',label:'🌙 Ban đêm'},
+  {id:'rain',label:'🌧️ Mưa rào'}
+];
+var weatherIdx=0;
+var raindrops=[];
+(function(){
+  for(var i=0;i<85;i++){
+    raindrops.push({x:Math.random()*AW,y:Math.random()*AH,len:4+Math.random()*4,spd:140+Math.random()*60});
+  }
+})();
+
+/* 4 Hệ Chuyên Ngành Sinh Viên NTU (Classes) */
+var CLASSES={
+  it:{
+    id:'it',name:'💻 Chiến thần IT',
+    passive:'✨ Nội tại: Mở khóa [⚡ Dịch chuyển Wi-Fi] tới mọi địa điểm đã Check-in'
+  },
+  media:{
+    id:'media',name:'📸 Nhiếp ảnh Media',
+    passive:'✨ Nội tại: Bay Flycam không tốn sức + Nhân đôi XP khi chụp Postcard (+60 XP)'
+  },
+  runner:{
+    id:'runner',name:'🏃 Runner NTU Trail',
+    passive:'✨ Nội tại: Stamina tối đa 150 + Miễn giảm tốc khi leo dốc đồi Thư viện'
+  },
+  ocean:{
+    id:'ocean',name:'🌊 Thám hiểm Đại dương',
+    passive:'✨ Nội tại: Tự động hiện gợi ý đáp án tại 8 Trạm + Chạy nhanh gần Biển'
+  }
+};
+
+/* 4 Chú Mèo Canteen / KTX đáng yêu */
+var CAMPUS_CATS=[
+  {id:'cat_canteen',name:'Mèo Mướp Nhà Ăn',placeId:'canteen',x:X(735),y:Y(435),col:'#f59e0b'},
+  {id:'cat_k5',name:'Mèo Tam Thể K-5',placeId:'k5',x:X(650),y:Y(520),col:'#fb7185'},
+  {id:'cat_g6',name:'Mèo Đen Debugger G-6',placeId:'g6',x:X(420),y:Y(960),col:'#38bdf8'},
+  {id:'cat_lib',name:'Mèo Học Bá Thư Viện',placeId:'lib',x:X(1185),y:Y(422),col:'#a78bfa'}
+];
+
+/* NPC Sinh viên đi bộ & Cầu thủ đá bóng trên sân */
+var NPCS=[];
+(function(){
+  var routes=[
+    [[520,590],[655,700],[690,880],[790,982]],
+    [[730,538],[957,518],[1145,520],[1148,740]],
+    [[750,752],[1000,745],[1250,740]],
+    [[957,518],[1040,440],[1100,380],[1200,415]],
+    [[350,610],[357,720],[350,870],[500,962]]
+  ];
+  var shirtCols=['#2563eb','#16a34a','#9333ea','#0d9488','#db2777'];
+  routes.forEach(function(rt,idx){
+    var pts=rt.map(function(p){return [X(p[0]),Y(p[1])];});
+    NPCS.push({
+      x:pts[0][0],y:pts[0][1],pts:pts,cur:1,dir:1,
+      spd:20+idx*2.5,col:shirtCols[idx%shirtCols.length],frame:0,t:0
+    });
+  });
+})();
+
+/* Giải chạy bộ NTU Campus Trail (6 Checkpoints) */
+var TRAIL_CPS=['gate','g6','ht1','g3','lib','pitch'];
+var trailState={
+  active:false,
+  cpIndex:0,
+  startTime:0,
+  elapsed:0,
+  bestTime:null
+};
+
+/* ============================================================================
+   4. DỮ LIỆU 8 TRẠM THỬ THÁCH & LƯU TRỮ TRẠNG THÁI
+   ============================================================================ */
+var QUEST_STATIONS={
+  gate:{
+    order:1,placeId:'gate',title:'Trạm 1: Quiz Tân Sinh Viên',badge:'NHẬP HỌC NTU',xp:100,
+    shortDesc:'Trả lời câu hỏi nhập môn về địa chỉ Trường Đại học Nha Trang.',
+    oceanHint:'💡 Gợi ý Thám hiểm: Địa chỉ chính thức là Số 02 đường Nguyễn Đình Chiểu.'
+  },
+  g6:{
+    order:2,placeId:'g6',title:'Trạm 2: Fix Bug Đồ Án IT',badge:'KHOA CNTT · G-6',xp:100,
+    shortDesc:'Đập 5 con bọ (bug) xuất hiện trên màn hình terminal trong 12 giây.',
+    oceanHint:'💡 Gợi ý Thám hiểm: Hệ của bạn được cộng thêm +4 giây thời gian debug!'
+  },
+  main:{
+    order:3,placeId:'main',title:'Trạm 3: Xin Dấu Hành Chính',badge:'TÒA NHÀ CHÍNH',xp:100,
+    shortDesc:'Bấm chọn đúng thứ tự 4 bước quy trình thủ tục hành chính sinh viên.',
+    oceanHint:'💡 Gợi ý Thám hiểm: Hãy bấm theo đúng số tự nhiên Bước 1 -> Bước 2 -> Bước 3 -> Bước 4.'
+  },
+  a6:{
+    order:4,placeId:'a6',title:'Trạm 4: Lật Thẻ Sinh Vật Biển',badge:'BẢO TÀNG THỦY SINH · A-6',xp:100,
+    shortDesc:'Ghép đúng 4 cặp mẫu sinh vật biển đặc trưng tại bảo tàng.',
+    oceanHint:'💡 Gợi ý Thám hiểm: Các thẻ sẽ hé lộ vị trí 1.2 giây đầu tiên cho bạn quan sát!'
+  },
+  canteen:{
+    order:5,placeId:'canteen',title:'Trạm 5: Bữa Trưa Sinh Viên',badge:'NHÀ ĂN NTU',xp:100,
+    shortDesc:'Chọn đủ 4 món ăn dinh dưỡng để nạp đầy 100% Thể lực và nhận XP.',
+    oceanHint:'💡 Gợi ý Thám hiểm: Chọn cả 4 ô món ăn để hoàn tất thực đơn dinh dưỡng.'
+  },
+  pitch:{
+    order:6,placeId:'pitch',title:'Trạm 6: Sút Phạt NTU Cup',badge:'SÂN BÓNG ĐÁ',xp:100,
+    shortDesc:'Canh thanh lực vào vùng xanh lá để sút thành công 3 bàn thắng.',
+    oceanHint:'💡 Gợi ý Thám hiểm: Vùng sút thành công được mở rộng hơn cho hệ của bạn!'
+  },
+  lib:{
+    order:7,placeId:'lib',title:'Trạm 7: Tra Cứu Sơ Đồ Khoa/Viện',badge:'THƯ VIỆN TV-2,3,4',xp:100,
+    shortDesc:'Trả lời nhanh 2 câu hỏi ghép Khoa với Tòa nhà trên bản đồ NTU.',
+    oceanHint:'💡 Gợi ý Thám hiểm: Câu 1 chọn Tòa A-3, Câu 2 chọn Giảng đường G-1.'
+  },
+  ht3:{
+    order:8,placeId:'ht3',title:'Trạm 8: Lễ Tốt Nghiệp Danh Dự',badge:'HỘI TRƯỜNG HT-3',xp:150,
+    shortDesc:'Giải câu đố tổng kết tại Viện Khoa học Biển & bắn pháo hoa tốt nghiệp!',
+    oceanHint:'💡 Gợi ý Thám hiểm: Chọn Viện Khoa học Biển và Công nghệ Khai thác Thủy sản.'
+  }
+};
+
+var STORAGE_KEY='ntu_campus_quest_v2';
+var gameState={
+  xp:60, // Tặng 60 XP khởi đầu để tân sinh viên trải nghiệm Canteen
+  playerClass:'it',
+  checkedIn:{},
+  questsDone:{},
+  catsPetted:{},
+  postcardsTaken:0,
+  bestTrailSec:null,
+  stamina:100,
+  maxStamina:100,
+  sprintToggle:false,
+  droneMode:false,
+  buffSpeedTimer:0,
+  buffInfStaminaTimer:0
+};
+
+function loadState(){
+  try{
+    var raw=localStorage.getItem(STORAGE_KEY)||localStorage.getItem('ntu_campus_quest_v1');
+    if(raw){
+      var parsed=JSON.parse(raw);
+      if(parsed&&typeof parsed==='object'){
+        if(typeof parsed.xp==='number')gameState.xp=parsed.xp;
+        if(parsed.playerClass&&CLASSES[parsed.playerClass])gameState.playerClass=parsed.playerClass;
+        gameState.checkedIn=parsed.checkedIn||{};
+        gameState.questsDone=parsed.questsDone||{};
+        gameState.catsPetted=parsed.catsPetted||{};
+        gameState.postcardsTaken=Number(parsed.postcardsTaken)||0;
+        gameState.bestTrailSec=parsed.bestTrailSec||null;
+      }
+    }
+  }catch(e){}
+  gameState.maxStamina=gameState.playerClass==='runner'?150:100;
+  gameState.stamina=gameState.maxStamina;
+}
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify({
+      xp:gameState.xp,
+      playerClass:gameState.playerClass,
+      checkedIn:gameState.checkedIn,
+      questsDone:gameState.questsDone,
+      catsPetted:gameState.catsPetted,
+      postcardsTaken:gameState.postcardsTaken,
+      bestTrailSec:gameState.bestTrailSec
+    }));
+  }catch(e){}
+}
+loadState();
+
+/* Hiệu ứng chữ bay & Pháo hoa trên Canvas */
+var floatTexts=[];
+var fireworks=[];
+var fireworkTimer=0;
+
+function addFloatText(text,x,y,color){
+  floatTexts.push({text:text,x:x,y:y,vy:-18,life:1.6,maxLife:1.6,color:color||'#ffd35a'});
+}
+function spawnFirework(x,y){
+  var cols=['#ffd35a','#ff5964','#35ff69','#38bdf8','#f472b6','#ffffff'];
+  for(var i=0;i<26;i++){
+    var ang=Math.random()*6.2832,spd=15+Math.random()*42;
+    fireworks.push({
+      x:x,y:y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd-8,
+      life:1.1+Math.random()*0.6,col:cols[Math.floor(Math.random()*cols.length)]
+    });
+  }
+}
+function triggerGraduationFireworks(){
+  fireworkTimer=7.5;
+  spawnFirework(P.x,P.y-20);
+  spawnFirework(X(1200),Y(1050));
+  spawnFirework(X(800),Y(850));
+}
+
+/* ============================================================================
+   5. NGƯỜI CHƠI, FLYCAM (DRONE), NPC & TÌM ĐƯỜNG
+   ============================================================================ */
+var P={x:X(560),y:Y(600),dir:'down',moving:false,frame:0,sprinting:false,slopeState:0,elev:12};
+var route=[],keys={up:0,down:0,left:0,right:0,shift:0};
+var nearbyCat=null;
+
+function solid(px,py){
+  var cx=Math.floor(px/CS),cy=Math.floor(py/CS);
+  if(cx<0||cy<0||cx>=GW||cy>=GH)return true;
+  return blocked[cy*GW+cx]===1;
+}
+function boxFree(px,py){
+  if(gameState.droneMode){
+    return px>=6&&py>=10&&px<AW-6&&py<AH-6;
+  }
+  return !(solid(px-1,py)||solid(px+1,py)||solid(px-1,py-1)||solid(px+1,py-1));
+}
+
+function drawPlayer(c,ts){
+  var x=Math.round(P.x)-4,y=Math.round(P.y)-10,sw=P.moving&&P.frame%2===1?1:0;
+
+  // Nếu đang ở chế độ Flycam (Drone Mode)
+  if(gameState.droneMode){
+    var hover=Math.round(Math.sin((ts||0)/140)*1.5);
+    var dy=y-8+hover;
+    // Bóng drone dưới mặt đất
+    c.fillStyle='rgba(0,0,0,.32)';
+    c.fillRect(x+1,y+9,6,2);
+    // Thân & Cánh quạt Drone
+    c.fillStyle='#0284c7';
+    c.fillRect(x,dy+3,8,3);
+    c.fillStyle='#38bdf8';
+    c.fillRect(x+2,dy+2,4,2);
+    // Đèn LED camera
+    c.fillStyle=((ts||0)%400<200)?'#ef4444':'#22c55e';
+    c.fillRect(x+3,dy+4,2,1);
+    // Cánh quạt xoay 4 góc
+    var spin=((ts||0)%120<60)?0:1;
+    c.fillStyle='#e2e8f0';
+    c.fillRect(x-2+spin,dy+1,3,1);
+    c.fillRect(x+7-spin,dy+1,3,1);
+    return;
+  }
+
+  // Hào quang chạy nước rút hoặc Buff Cà phê muối
+  if((P.sprinting&&P.moving)||gameState.buffSpeedTimer>0){
+    c.fillStyle=gameState.buffSpeedTimer>0?'rgba(56,189,248,.48)':'rgba(255,211,90,.45)';
+    c.beginPath();c.arc(Math.round(P.x),Math.round(P.y)-4,6,0,6.2832);c.fill();
+  }
+  c.fillStyle='rgba(0,0,0,.28)';c.fillRect(x+1,y+9,6,2);
+  c.fillStyle='#34456f';c.fillRect(x+2,y+8,2,2-sw);c.fillRect(x+4,y+8,2,1+sw);
+  // Màu áo theo Hệ Sinh viên
+  var shirtCol=gameState.playerClass==='it'?'#0284c7':gameState.playerClass==='media'?'#d97706':gameState.playerClass==='runner'?'#16a34a':'#e0533a';
+  c.fillStyle=shirtCol;c.fillRect(x+1,y+5,6,3);
+  c.fillStyle='#f2c9a0';c.fillRect(x,y+5,1,2);c.fillRect(x+7,y+5,1,2);c.fillRect(x+1,y+2,6,3);
+  c.fillStyle='#2b2118';c.fillRect(x+1,y,6,2);
+  if(P.dir==='up'){c.fillRect(x+1,y+2,6,2);}
+  else{var ox=P.dir==='left'?-1:P.dir==='right'?1:0;c.fillRect(x+2+ox,y+3,1,1);c.fillRect(x+5+ox,y+3,1,1);}
+  if(P.dir==='left')c.fillRect(x+6,y+2,1,3);
+  if(P.dir==='right')c.fillRect(x+1,y+2,1,3);
+}
+
+function drawNPCsAndCats(c,t){
+  // Vẽ NPC sinh viên đi dạo
+  for(var i=0;i<NPCS.length;i++){
+    var n=NPCS[i];
+    var x=Math.round(n.x)-3,y=Math.round(n.y)-8,sw=n.frame%2===1?1:0;
+    c.fillStyle='rgba(0,0,0,.22)';c.fillRect(x+1,y+7,4,1);
+    c.fillStyle='#334155';c.fillRect(x+1,y+6,1,2-sw);c.fillRect(x+3,y+6,1,1+sw);
+    c.fillStyle=n.col;c.fillRect(x+1,y+3,4,3);
+    c.fillStyle='#fde68a';c.fillRect(x+1,y+1,4,2);
+    c.fillStyle='#1e293b';c.fillRect(x+1,y,4,1);
+  }
+  // Vẽ cầu thủ đá bóng trên sân bóng (pitch)
+  var pr=getPlace('pitch').rects[0];
+  var bx=pr.x+pr.w/2+Math.sin(t*2.1)*(pr.w*0.28);
+  var by=pr.y+pr.h/2+Math.cos(t*1.5)*(pr.h*0.32);
+  c.fillStyle='#ffffff';
+  c.fillRect(Math.round(bx),Math.round(by),2,2);
+  // 2 cầu thủ chạy theo bóng
+  c.fillStyle='#ef4444';c.fillRect(Math.round(bx-4),Math.round(by-3),3,4);
+  c.fillStyle='#38bdf8';c.fillRect(Math.round(bx+3),Math.round(by+2),3,4);
+
+  // Vẽ 4 chú Mèo Canteen / KTX
+  for(var k=0;k<CAMPUS_CATS.length;k++){
+    var cat=CAMPUS_CATS[k];
+    var cx=Math.round(cat.x)-3,cy=Math.round(cat.y)-4;
+    var tail=Math.round(Math.sin(t*4+k)*1);
+    c.fillStyle='rgba(0,0,0,.22)';c.fillRect(cx,cy+4,6,1);
+    c.fillStyle=cat.col;
+    c.fillRect(cx+1,cy+1,4,3); // thân
+    c.fillRect(cx,cy,1,2);c.fillRect(cx+4,cy,1,2); // 2 tai mèo
+    c.fillRect(cx+5,cy+1+tail,1,2); // đuôi ngoe nguẩy
+    c.fillStyle='#111';c.fillRect(cx+1,cy+1,1,1);c.fillRect(cx+3,cy+1,1,1);
+    if(!gameState.catsPetted[cat.id]){
+      c.fillStyle='#f472b6';
+      c.fillRect(cx+2,cy-3+Math.round(Math.sin(t*5)*1),2,2);
+    }
+  }
+}
+
+function nearestFree(cx,cy){
+  cx=Math.max(0,Math.min(GW-1,cx));cy=Math.max(0,Math.min(GH-1,cy));
+  if(!blocked[cy*GW+cx])return [cx,cy];
+  for(var r=1;r<16;r++)for(var dy=-r;dy<=r;dy++)for(var dx=-r;dx<=r;dx++){
+    if(Math.max(Math.abs(dx),Math.abs(dy))!==r)continue;
+    var a=cx+dx,b=cy+dy;if(a<0||b<0||a>=GW||b>=GH)continue;
+    if(!blocked[b*GW+a])return [a,b];
+  }
+  return null;
+}
+function los(ax,ay,bx,by){
+  var d=Math.hypot(bx-ax,by-ay),n=Math.max(1,Math.ceil(d));
+  for(var i=1;i<=n;i++){if(!boxFree(ax+(bx-ax)*i/n,ay+(by-ay)*i/n))return false;}
+  return true;
+}
+function findRoute(ax,ay){
+  if(gameState.droneMode){
+    return [[Math.max(8,Math.min(AW-8,ax)),Math.max(12,Math.min(AH-8,ay))]];
+  }
+  var f=nearestFree(Math.floor(ax/CS),Math.floor(ay/CS));if(!f)return [];
+  var s=nearestFree(Math.floor(P.x/CS),Math.floor(P.y/CS));if(!s)return [];
+  var goal=f[1]*GW+f[0],start=s[1]*GW+s[0];
+  var prev=new Int32Array(GW*GH).fill(-2),q=[start];prev[start]=-1;
+  var D=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+  for(var h=0;h<q.length;h++){
+    var cur=q[h];if(cur===goal)break;
+    var cx=cur%GW,cy=(cur-cx)/GW;
+    for(var d=0;d<8;d++){
+      var nx=cx+D[d][0],ny=cy+D[d][1];
+      if(nx<0||ny<0||nx>=GW||ny>=GH)continue;
+      var ni=ny*GW+nx;if(prev[ni]!==-2||blocked[ni])continue;
+      if(D[d][0]&&D[d][1]&&(blocked[cy*GW+nx]||blocked[ny*GW+cx]))continue;
+      prev[ni]=cur;q.push(ni);
+    }
+  }
+  if(prev[goal]===-2)return [];
+  var raw=[],n=goal;
+  while(n!==start&&n!==-1){raw.push([(n%GW)*CS+1,Math.floor(n/GW)*CS+1]);n=prev[n];}
+  raw.reverse();
+  var out=[],cx0=P.x,cy0=P.y,i=0;
+  while(i<raw.length){
+    var j=raw.length-1;
+    while(j>i&&!los(cx0,cy0,raw[j][0],raw[j][1]))j--;
+    out.push(raw[j]);cx0=raw[j][0];cy0=raw[j][1];i=j+1;
+  }
+  return out;
+}
+
+function distTo(p){
+  var best=1e9;
+  p.rects.forEach(function(r){
+    var dx=Math.max(r.x-P.x,0,P.x-(r.x+r.w)),dy=Math.max(r.y-P.y,0,P.y-(r.y+r.h));
+    best=Math.min(best,Math.hypot(dx,dy));
+  });
+  return best;
+}
+
+function getPlace(id){
+  for(var i=0;i<PLACES.length;i++)if(PLACES[i].id===id)return PLACES[i];
+  return null;
+}
+
+/* ============================================================================
+   6. GIAO DIỆN HUD, CHUYÊN NGÀNH, NHÀ ĂN CANTEEN & DANH SÁCH ĐỊA ĐIỂM
+   ============================================================================ */
+var stage=document.getElementById('stage'),cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+ctx.imageSmoothingEnabled=false;
+var info=document.getElementById('info'),listEl=document.getElementById('list'),chipsEl=document.getElementById('chips'),qEl=document.getElementById('q');
+var questListEl=document.getElementById('questListEl');
+var canteenShopEl=document.getElementById('canteenShopEl');
+var mapPrompt=document.getElementById('mapPrompt'),promptText=document.getElementById('promptText');
+var promptCheckinBtn=document.getElementById('promptCheckinBtn'),promptQuestBtn=document.getElementById('promptQuestBtn'),promptCatBtn=document.getElementById('promptCatBtn');
+
+function norm(s){return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d');}
+PLACES.forEach(function(p){
+  p.hay=norm([p.short,p.name,TYPES[p.type]].concat((p.units||[]).map(function(u){return u[0];})).join(' '));
+});
+
+var pins={},items={},selected=null,nearbyPlace=null,filter='all',query='';
+
+PLACES.forEach(function(p){
+  var b=document.createElement('button');b.type='button';
+  b.className='pin'+(p.lm?' lm':'');
+  b.style.left=((p.bb.x0+p.bb.x1)/2/AW*100)+'%';
+  b.style.top=((p.bb.y0+p.bb.y1)/2/AH*100)+'%';
+  b.setAttribute('aria-label',p.name);
+  b.addEventListener('click',function(e){e.stopPropagation();sfxClick();goTo(p);});
+  stage.appendChild(b);pins[p.id]=b;
+});
+
+function refreshPinLabels(){
+  PLACES.forEach(function(p){
+    var b=pins[p.id];
+    var isQuest=!!QUEST_STATIONS[p.id];
+    var qDone=!!gameState.questsDone[p.id];
+    var cDone=!!gameState.checkedIn[p.id];
+    b.classList.toggle('checked',cDone);
+    b.classList.toggle('quest-pin',isQuest&&!qDone);
+    b.classList.toggle('quest-done',isQuest&&qDone);
+    var prefix='';
+    if(isQuest)prefix=qDone?'⭐ ':'🎯 ';
+    else if(cDone)prefix='✓ ';
+    b.textContent=prefix+p.short;
+  });
+}
+
+[
+ {t:'Đường Nguyễn Đình Chiểu',x:640,y:408,r:-26.5},
+ {t:'Đường Tôn Thất Tùng',x:150,y:955,r:18.4},
+ {t:'Đường Phạm Văn Đồng',x:950,y:1160,r:-9.8},
+ {t:'BIỂN',x:1250,y:1150,r:-12,c:'sea'},
+ {t:'← Về trung tâm Nha Trang',x:300,y:1318,r:0}
+].forEach(function(l){
+  var s=document.createElement('span');s.className='st'+(l.c?' '+l.c:'');s.textContent=l.t;
+  s.style.left=(l.x/1500*100)+'%';s.style.top=((l.y-Y0)/(AH*AS)*100)+'%';
+  s.style.transform='translate(-50%,-50%) rotate('+l.r+'deg)';stage.appendChild(s);
+});
+
+function getRankTitle(xp){
+  if(xp>=1300)return '🎓 Thủ khoa Huyền Thoại';
+  if(xp>=800)return '🌟 Thổ địa NTU';
+  if(xp>=350)return '⚡ Sinh viên Năng động';
+  return '🌱 Tân sinh viên';
+}
+
+function updateClassUI(){
+  Array.prototype.forEach.call(document.querySelectorAll('#classBar .class-pill'),function(btn){
+    var c=btn.getAttribute('data-cls');
+    btn.classList.toggle('active',c===gameState.playerClass);
+  });
+  var clsObj=CLASSES[gameState.playerClass]||CLASSES.it;
+  var passiveEl=document.getElementById('classPassiveText');
+  var buffHtml=clsObj.passive;
+  if(gameState.buffSpeedTimer>0){
+    buffHtml+=' <span class="buff-tag">☕ Cà phê muối: '+Math.ceil(gameState.buffSpeedTimer)+'s</span>';
+  }
+  if(gameState.buffInfStaminaTimer>0){
+    buffHtml+=' <span class="buff-tag">🥖 Bất tử Thể lực: '+Math.ceil(gameState.buffInfStaminaTimer)+'s</span>';
+  }
+  passiveEl.innerHTML=buffHtml;
+}
+
+Array.prototype.forEach.call(document.querySelectorAll('#classBar .class-pill'),function(btn){
+  btn.addEventListener('click',function(){
+    var c=btn.getAttribute('data-cls');
+    if(!CLASSES[c])return;
+    gameState.playerClass=c;
+    gameState.maxStamina=c==='runner'?150:100;
+    if(gameState.stamina>gameState.maxStamina)gameState.stamina=gameState.maxStamina;
+    if(c==='runner')gameState.stamina=150;
+    sfxClick();
+    saveState();
+    updateClassUI();
+    updateStaminaHUD();
+    showInfo();
+    addFloatText('Đã chọn: '+CLASSES[c].name,P.x,P.y-14,'#ffd35a');
+  });
+});
+
+function updateHUD(){
+  var checkinCount=Object.keys(gameState.checkedIn).length;
+  var questCount=Object.keys(gameState.questsDone).length;
+  var maxXP=1650;
+  document.getElementById('hudXpText').textContent=gameState.xp+' XP';
+  document.getElementById('hudRank').textContent=getRankTitle(gameState.xp);
+  document.getElementById('barXp').style.width=Math.min(100,Math.round(gameState.xp/maxXP*100))+'%';
+
+  var totalProg=Math.round(((questCount/8)*0.6+(checkinCount/PLACES.length)*0.4)*100);
+  document.getElementById('hudQuestText').textContent=questCount+'/8 Trạm · '+checkinCount+'/35 ĐĐ';
+  document.getElementById('hudQuestSub').textContent=totalProg+'% khám phá toàn trường';
+  document.getElementById('barQuest').style.width=totalProg+'%';
+}
+
+function updateStaminaHUD(){
+  var st=Math.round(gameState.stamina);
+  document.getElementById('hudStaminaText').textContent=st+' / '+gameState.maxStamina;
+  var bar=document.getElementById('barStamina');
+  bar.style.width=Math.min(100,Math.round(st/gameState.maxStamina*100))+'%';
+  bar.classList.toggle('low',st<25);
+}
+
+function updateTerrainHUD(seaDist){
+  document.getElementById('hudElevText').textContent='⛰️ '+P.elev+'m';
+  var slopeEl=document.getElementById('hudSlopeText');
+  if(gameState.droneMode){
+    slopeEl.textContent='🚁 Đang bay Flycam (75m)';
+    slopeEl.style.color='#0284c7';
+  }else if(P.slopeState>0){
+    slopeEl.textContent='🔼 Đang leo dốc NTU';
+    slopeEl.style.color='#d97706';
+  }else if(P.slopeState<0){
+    slopeEl.textContent='🔽 Đang đổ dốc (+Tốc độ)';
+    slopeEl.style.color='#16a34a';
+  }else{
+    slopeEl.textContent='➡️ Đường bằng';
+    slopeEl.style.color='var(--ink)';
+  }
+  var surfEl=document.getElementById('hudSurfaceText');
+  if(seaDist<75)surfEl.textContent='🌊 Gió biển Phạm Văn Đồng: Mạnh';
+  else if(P.elev>=42)surfEl.textContent='🌲 Đồi cao NTU: Gió mát';
+  else surfEl.textContent='🌿 Khuôn viên: Dễ chịu';
+}
+
+function doCheckin(p){
+  if(!p)return;
+  if(gameState.checkedIn[p.id]){
+    addFloatText('Đã check-in '+p.short,P.x,P.y-12,'#a7f3d0');
+    return;
+  }
+  gameState.checkedIn[p.id]=true;
+  gameState.xp+=20;
+  sfxCheckin();
+  addFloatText('+20 XP Check-in!',P.x,P.y-12,'#4ade80');
+  saveState();
+  refreshPinLabels();
+  updateHUD();
+  renderList();
+  showInfo();
+  updateProximityUI();
+}
+
+function petCat(cat){
+  if(!cat)return;
+  sfxMeow();
+  if(!gameState.catsPetted[cat.id]){
+    gameState.catsPetted[cat.id]=true;
+    gameState.xp+=25;
+    addFloatText('😻 Meow! +25 XP ('+cat.name+')',cat.x,cat.y-10,'#f472b6');
+    saveState();
+    updateHUD();
+    renderCanteenShop();
+  }else{
+    addFloatText('😻 '+cat.name+' kêu gừ gừ~',cat.x,cat.y-10,'#f472b6');
+  }
+  gameState.stamina=Math.min(gameState.maxStamina,gameState.stamina+20);
+  updateStaminaHUD();
+  updateProximityUI();
+}
+
+function completeQuest(placeId){
+  var q=QUEST_STATIONS[placeId];
+  if(!q)return;
+  if(!gameState.checkedIn[placeId]){
+    gameState.checkedIn[placeId]=true;
+    gameState.xp+=20;
+  }
+  if(!gameState.questsDone[placeId]){
+    gameState.questsDone[placeId]=true;
+    gameState.xp+=q.xp;
+    sfxQuestWin();
+    addFloatText('+'+q.xp+' XP Hoàn thành Trạm!',P.x,P.y-16,'#ffd35a');
+    spawnFirework(P.x,P.y-15);
+  }
+  saveState();
+  refreshPinLabels();
+  updateHUD();
+  renderList();
+  renderQuestList();
+  showInfo();
+  updateProximityUI();
+}
+
+function matches(p){
+  if(filter!=='all'&&p.type!==filter)return false;
+  return !query||p.hay.indexOf(query)!==-1;
+}
+
+function renderList(){
+  listEl.innerHTML='';items={};var n=0;
+  PLACES.forEach(function(p){
+    var ok=matches(p);pins[p.id].classList.toggle('dim',!ok);
+    if(!ok)return;n++;
+    var li=document.createElement('li'),b=document.createElement('button');
+    var pElev=getElevation(p.axe,p.aye);
+    var sub=TYPES[p.type]+' · ⛰️'+pElev+'m'+(p.units&&p.units.length?' · '+p.units.map(function(u){return u[0];}).join(', '):'');
+    var icons='';
+    if(QUEST_STATIONS[p.id])icons+=gameState.questsDone[p.id]?'<span title="Đã hoàn thành trạm">⭐</span>':'<span title="Trạm thử thách">🎯</span>';
+    if(gameState.checkedIn[p.id])icons+='<span title="Đã check-in" style="color:#16a34a;font-weight:800">✓</span>';
+    b.type='button';
+    b.innerHTML='<span class="n">'+p.short.replace('Tòa nhà chính','Chính').replace('Sân bóng đá','Sân').replace('Nhà thi đấu','Thi đấu').replace('Cổng chính','Cổng')+'</span>'+
+                '<span>'+p.name+'<small>'+sub+'</small></span>'+
+                '<span class="status-icons">'+icons+'</span>';
+    b.addEventListener('click',function(){sfxClick();goTo(p);});
+    li.appendChild(b);listEl.appendChild(li);items[p.id]=b;
+  });
+  if(!n){var e=document.createElement('li');e.className='empty';e.textContent='Không có địa điểm nào khớp.';listEl.appendChild(e);}
+  markSelected();
+}
+
+function renderQuestList(){
+  questListEl.innerHTML='';
+  Object.keys(QUEST_STATIONS).forEach(function(pid){
+    var q=QUEST_STATIONS[pid];
+    var p=getPlace(pid);
+    var done=!!gameState.questsDone[pid];
+    var li=document.createElement('li');
+    li.className='quest-card'+(done?' done':'');
+    li.innerHTML='<div class="quest-head"><span>'+(done?'✅ ':'🎯 ')+q.title+'</span><span class="badge '+(done?'done':'quest')+'">'+(done?'Hoàn thành':'+'+q.xp+' XP')+'</span></div>'+
+                 '<div class="quest-sub">📍 Địa điểm: <strong>'+p.name+'</strong> — '+q.shortDesc+'</div>';
+    li.addEventListener('click',function(){
+      sfxClick();
+      goTo(p);
+      if(distTo(p)<12)openQuestModal(pid);
+    });
+    questListEl.appendChild(li);
+  });
+}
+
+function renderCanteenShop(){
+  var shopItems=[
+    {id:'coffee',title:'☕ Cà phê muối Nha Trang',desc:'Tăng +35% tốc độ chạy trong 45 giây',cost:30},
+    {id:'banhmi',title:'🥖 Bánh mì chả cá NTU',desc:'Hồi 100% Stamina + Bất tử Thể lực 30 giây',cost:40},
+    {id:'icedtea',title:'🧊 Trà đá Canteen mát lạnh',desc:'Hồi ngay lập tức +60 Stamina',cost:15}
+  ];
+  var html='<div style="font-weight:700;font-size:13px;margin-bottom:4px">🍱 Menu Buff Nhà ăn (Đang có: '+gameState.xp+' XP)</div>';
+  shopItems.forEach(function(it){
+    html+='<div class="shop-item">'+
+            '<div class="shop-item-info"><span class="shop-item-title">'+it.title+'</span><span class="shop-item-desc">'+it.desc+'</span></div>'+
+            '<button type="button" class="btn-buy" data-buy="'+it.id+'">Mua ('+it.cost+' XP)</button>'+
+          '</div>';
+  });
+  html+='<div style="font-weight:700;font-size:13px;margin:10px 0 4px">🐱 Sổ tay 4 Mèo Canteen / KTX (+25 XP/bé)</div>';
+  CAMPUS_CATS.forEach(function(cat){
+    var petted=!!gameState.catsPetted[cat.id];
+    var p=getPlace(cat.placeId);
+    html+='<div class="shop-item">'+
+            '<div class="shop-item-info"><span class="shop-item-title">'+(petted?'😻 ':'🐱 ')+cat.name+'</span><span class="shop-item-desc">Hay nằm phơi nắng ở: '+p.name+'</span></div>'+
+            '<button type="button" class="btn-util" data-cat-go="'+cat.placeId+'">'+(petted?'Đã nựng':'🧭 Tìm mèo')+'</button>'+
+          '</div>';
+  });
+  canteenShopEl.innerHTML=html;
+
+  Array.prototype.forEach.call(canteenShopEl.querySelectorAll('[data-buy]'),function(btn){
+    btn.addEventListener('click',function(){
+      var id=btn.getAttribute('data-buy');
+      var item=shopItems.filter(function(x){return x.id===id;})[0];
+      if(!item)return;
+      if(gameState.xp<item.cost){
+        sfxError();
+        addFloatText('Cần '+item.cost+' XP để mua!',P.x,P.y-12,'#f87171');
+        return;
+      }
+      gameState.xp-=item.cost;
+      sfxCheckin();
+      if(id==='coffee'){
+        gameState.buffSpeedTimer=45;
+        addFloatText('☕ +35% Tốc độ (45s)!',P.x,P.y-14,'#38bdf8');
+      }else if(id==='banhmi'){
+        gameState.stamina=gameState.maxStamina;
+        gameState.buffInfStaminaTimer=30;
+        addFloatText('🥖 Bất tử Thể lực (30s)!',P.x,P.y-14,'#4ade80');
+      }else if(id==='icedtea'){
+        gameState.stamina=Math.min(gameState.maxStamina,gameState.stamina+60);
+        addFloatText('🧊 +60 Thể lực!',P.x,P.y-14,'#38bdf8');
+      }
+      saveState();
+      updateHUD();
+      updateStaminaHUD();
+      updateClassUI();
+      renderCanteenShop();
+    });
+  });
+
+  Array.prototype.forEach.call(canteenShopEl.querySelectorAll('[data-cat-go]'),function(btn){
+    btn.addEventListener('click',function(){
+      var pid=btn.getAttribute('data-cat-go');
+      sfxClick();
+      goTo(getPlace(pid));
+    });
+  });
+}
+
+function renderChips(){
+  var all=[['all','Tất cả']].concat(Object.keys(TYPES).map(function(k){return [k,TYPES[k]];}));
+  all.forEach(function(a){
+    var b=document.createElement('button');b.type='button';b.className='chip';b.textContent=a[1];
+    b.setAttribute('aria-pressed',a[0]===filter);
+    b.addEventListener('click',function(){filter=a[0];Array.prototype.forEach.call(chipsEl.children,function(ch,i){ch.setAttribute('aria-pressed',all[i][0]===filter);});renderList();});
+    chipsEl.appendChild(b);
+  });
+}
+qEl.addEventListener('input',function(){query=norm(qEl.value.trim());renderList();});
+
+function markSelected(){
+  Object.keys(pins).forEach(function(id){pins[id].classList.toggle('on',id===selected);});
+  Object.keys(items).forEach(function(id){if(id===selected)items[id].setAttribute('aria-current','true');else items[id].removeAttribute('aria-current');});
+}
+
+function showInfo(){
+  var p=PLACES.filter(function(q){return q.id===selected;})[0];
+  if(!p){
+    info.innerHTML='<div class="badge-row"><span class="badge">Khuôn viên NTU</span></div>'+
+      '<h2>Chọn hoặc đi tới một địa điểm</h2>'+
+      '<p>Di chuyển lại gần tòa nhà để <strong>Check-in (+20 XP)</strong>, bấm <strong>📸 Chụp Postcard</strong> để lưu ảnh kỷ niệm hoặc chọn <strong>🏅 Giải chạy Trail</strong> trên thanh công cụ.</p>';
+    return;
+  }
+  var isNear=distTo(p)<11;
+  var cDone=!!gameState.checkedIn[p.id];
+  var q=QUEST_STATIONS[p.id];
+  var qDone=!!gameState.questsDone[p.id];
+  var pElev=getElevation(p.axe,p.aye);
+
+  var badges='<div class="badge-row"><span class="badge">'+TYPES[p.type]+' · ⛰️ '+pElev+'m</span>';
+  if(cDone)badges+='<span class="badge done">✓ Đã Check-in</span>';
+  if(q)badges+='<span class="badge '+(qDone?'done':'quest')+'">'+(qDone?'⭐ Trạm đã xong':'🎯 Trạm #'+q.order)+'</span>';
+  badges+='</div>';
+
+  var u='';
+  if(p.units&&p.units.length){
+    u='<ul class="units">'+p.units.map(function(x){return '<li><span>'+x[0]+'</span><span class="fl">'+x[1]+'</span></li>';}).join('')+'</ul>';
+  }
+
+  var qBox='';
+  if(q){
+    qBox='<div style="margin-top:10px;padding:9px 11px;border-radius:8px;background:var(--bg);border:1.5px dashed var(--gold);font-size:13px">'+
+         '<strong>🎯 '+q.title+' (+'+q.xp+' XP)</strong><br><span style="color:var(--muted)">'+q.shortDesc+'</span></div>';
+  }
+
+  var acts='<div class="info-actions">';
+  if(!isNear){
+    acts+='<button type="button" class="btn-action walk" id="infoWalkBtn">'+(gameState.droneMode?'🚁 Bay Flycam tới ':'🚶 Đi bộ tới ')+p.short+'</button>';
+    // Kỹ năng đặc quyền của hệ Chiến thần IT: Dịch chuyển Wi-Fi tới địa điểm đã Check-in
+    if(gameState.playerClass==='it'&&cDone){
+      acts+='<button type="button" class="btn-action" id="infoTeleportBtn" style="background:#0284c7;color:#fff">⚡ Dịch chuyển Wi-Fi tới '+p.short+' (Hệ IT)</button>';
+    }
+  }else{
+    if(!cDone){
+      acts+='<button type="button" class="btn-action" id="infoCheckinBtn">📍 Check-in tại đây (+20 XP) [Space]</button>';
+    }
+    if(q){
+      acts+='<button type="button" class="btn-action quest" id="infoQuestBtn">'+(qDone?'🎮 Chơi lại Thử thách':'🎯 Thực hiện Thử thách (+'+q.xp+' XP)')+'</button>';
+    }
+    acts+='<button type="button" class="btn-action walk" id="infoPhotoBtn">📸 Chụp Postcard tại '+p.short+'</button>';
+  }
+  acts+='</div>';
+
+  info.innerHTML=badges+'<h2>'+p.name+'</h2><p>'+p.desc+'</p>'+u+qBox+acts;
+
+  var wBtn=document.getElementById('infoWalkBtn');
+  if(wBtn)wBtn.addEventListener('click',function(){sfxClick();goTo(p);});
+  var tpBtn=document.getElementById('infoTeleportBtn');
+  if(tpBtn)tpBtn.addEventListener('click',function(){
+    var f=nearestFree(Math.floor(p.axe/CS),Math.floor(p.aye/CS));
+    if(f){P.x=f[0]*CS+1;P.y=f[1]*CS+1;}else{P.x=p.axe;P.y=p.aye;}
+    route=[];
+    sfxCheckin();
+    addFloatText('⚡ Dịch chuyển Wi-Fi!',P.x,P.y-14,'#38bdf8');
+    showInfo();
+    updateProximityUI();
+  });
+  var cBtn=document.getElementById('infoCheckinBtn');
+  if(cBtn)cBtn.addEventListener('click',function(){doCheckin(p);});
+  var qBtn=document.getElementById('infoQuestBtn');
+  if(qBtn)qBtn.addEventListener('click',function(){sfxClick();openQuestModal(p.id);});
+  var phBtn=document.getElementById('infoPhotoBtn');
+  if(phBtn)phBtn.addEventListener('click',function(){openPostcardModal(p);});
+}
+
+function select(id){
+  selected=id;
+  markSelected();
+  showInfo();
+}
+function goTo(p){
+  select(p.id);
+  route=findRoute(p.axe,p.aye);
+}
+
+function goToNextQuest(){
+  sfxClick();
+  if(trailState.active){
+    var cpId=TRAIL_CPS[trailState.cpIndex];
+    var cpPlace=getPlace(cpId);
+    if(cpPlace){goTo(cpPlace);addFloatText('🧭 CP'+(trailState.cpIndex+1)+': '+cpPlace.short,P.x,P.y-12,'#38bdf8');}
+    return;
+  }
+  var bestP=null,bestD=1e9;
+  Object.keys(QUEST_STATIONS).forEach(function(pid){
+    if(!gameState.questsDone[pid]){
+      var p=getPlace(pid);
+      var d=Math.hypot(p.axe-P.x,p.aye-P.y);
+      if(d<bestD){bestD=d;bestP=p;}
+    }
+  });
+  if(!bestP){
+    PLACES.forEach(function(p){
+      if(!gameState.checkedIn[p.id]){
+        var d=Math.hypot(p.axe-P.x,p.aye-P.y);
+        if(d<bestD){bestD=d;bestP=p;}
+      }
+    });
+  }
+  if(bestP){
+    goTo(bestP);
+    addFloatText('🧭 Dẫn đường: '+bestP.short,P.x,P.y-12,'#38bdf8');
+  }else{
+    openNotebookModal();
+  }
+}
+
+function updateProximityUI(){
+  if(!nearbyPlace&&!nearbyCat){
+    mapPrompt.hidden=true;
+    return;
+  }
+  var p=nearbyPlace;
+  var cDone=p?!!gameState.checkedIn[p.id]:true;
+  var q=p?QUEST_STATIONS[p.id]:null;
+  var qDone=p?!!gameState.questsDone[p.id]:true;
+
+  if(cDone&&(!q||qDone)&&!nearbyCat){
+    mapPrompt.hidden=true;
+    return;
+  }
+  mapPrompt.hidden=false;
+  promptText.textContent=p?('📍 '+p.short+(P.elev>=40?' (Đồi '+P.elev+'m)':'')):('🐱 '+nearbyCat.name);
+  promptCheckinBtn.hidden=cDone;
+  if(q){
+    promptQuestBtn.hidden=false;
+    promptQuestBtn.textContent=qDone?'🎯 Chơi lại':'🎯 Thử thách (+'+q.xp+' XP)';
+  }else{
+    promptQuestBtn.hidden=true;
+  }
+  if(nearbyCat){
+    promptCatBtn.hidden=false;
+    promptCatBtn.textContent=gameState.catsPetted[nearbyCat.id]?'😻 Nựng '+nearbyCat.name:'🐱 Nựng mèo (+25 XP)';
+  }else{
+    promptCatBtn.hidden=true;
+  }
+}
+
+promptCheckinBtn.addEventListener('click',function(){if(nearbyPlace)doCheckin(nearbyPlace);});
+promptQuestBtn.addEventListener('click',function(){if(nearbyPlace&&QUEST_STATIONS[nearbyPlace.id])openQuestModal(nearbyPlace.id);});
+promptCatBtn.addEventListener('click',function(){if(nearbyCat)petCat(nearbyCat);});
+
+/* ============================================================================
+   7. CHẾ ĐỘ CHỤP ẢNH POSTCARD PIXEL-ART & GIẢI CHẠY NTU CAMPUS TRAIL
+   ============================================================================ */
+function openPostcardModal(targetPlace){
+  sfxShutter();
+  var p=targetPlace||nearbyPlace||(selected?getPlace(selected):getPlace('lib'));
+  var bonus=gameState.playerClass==='media'?60:30;
+  gameState.xp+=bonus;
+  gameState.postcardsTaken++;
+  saveState();
+  updateHUD();
+  addFloatText('📸 +'+bonus+' XP Chụp Postcard!',P.x,P.y-15,'#ffd35a');
+
+  modalBackdrop.hidden=false;
+  modalBadge.textContent='CLB TRUYỀN THÔNG · POSTCARD STUDIO';
+  modalTitle.textContent='Bưu thiếp Kỷ niệm: '+p.name;
+
+  var wMode=WEATHER_MODES[weatherIdx];
+  var pElev=getElevation(p.axe,p.aye);
+
+  modalBody.innerHTML=
+    '<div class="postcard-wrap">'+
+      '<canvas id="postcardCanvas" class="postcard-canvas" width="460" height="270"></canvas>'+
+      '<p style="font-size:13px;color:var(--muted)">Khung cảnh: <strong>'+p.name+'</strong> (Độ cao ⛰️ '+pElev+'m · '+wMode.label+') · Thưởng <strong>+'+bonus+' XP</strong></p>'+
+      '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'+
+        '<button type="button" class="btn-util primary" id="btnDownloadPostcard">💾 Tải ảnh Postcard (PNG)</button>'+
+        '<button type="button" class="btn-util" id="btnClosePostcard">Đóng</button>'+
+      '</div>'+
+    '</div>';
+
+  var pc=document.getElementById('postcardCanvas'),pg=pc.getContext('2d');
+  pg.imageSmoothingEnabled=false;
+
+  // Vẽ bầu trời theo thời tiết hiện tại
+  var skyGrad=pg.createLinearGradient(0,0,0,175);
+  if(wMode.id==='sunset'){
+    skyGrad.addColorStop(0,'#4c1d95');skyGrad.addColorStop(0.55,'#ea580c');skyGrad.addColorStop(1,'#fde047');
+  }else if(wMode.id==='night'){
+    skyGrad.addColorStop(0,'#020617');skyGrad.addColorStop(1,'#1e293b');
+  }else if(wMode.id==='rain'){
+    skyGrad.addColorStop(0,'#334155');skyGrad.addColorStop(1,'#64748b');
+  }else{
+    skyGrad.addColorStop(0,'#0284c7');skyGrad.addColorStop(1,'#bae6fd');
+  }
+  pg.fillStyle=skyGrad;pg.fillRect(0,0,460,175);
+
+  // Mặt trời / Mặt trăng & Sao
+  if(wMode.id==='night'){
+    pg.fillStyle='#fef08a';
+    for(var s=0;s<35;s++)pg.fillRect((s*73)%440,12+(s*29)%110,2,2);
+    pg.beginPath();pg.arc(380,52,20,0,6.2832);pg.fill();
+  }else if(wMode.id==='sunset'){
+    pg.fillStyle='#fef08a';pg.beginPath();pg.arc(350,125,32,0,6.2832);pg.fill();
+  }else if(wMode.id==='day'){
+    pg.fillStyle='#fde047';pg.beginPath();pg.arc(380,48,22,0,6.2832);pg.fill();
+  }
+
+  // Biển Nha Trang phía xa & Đồi NTU
+  pg.fillStyle=wMode.id==='sunset'?'#0369a1':wMode.id==='night'?'#0f172a':'#0284c7';
+  pg.fillRect(0,135,460,55);
+  // Sóng biển lấp lánh
+  pg.fillStyle=wMode.id==='sunset'?'#fdba74':'#7dd3fc';
+  for(var w=0;w<22;w++)pg.fillRect(220+(w*37)%230,142+(w*13)%38,14,2);
+
+  // Đồi xanh khuôn viên NTU
+  pg.fillStyle=wMode.id==='night'?'#14532d':'#4d7c0f';
+  pg.beginPath();pg.moveTo(0,120);pg.quadraticCurveTo(180,95,340,165);pg.lineTo(0,185);pg.fill();
+  pg.fillStyle=wMode.id==='night'?'#064e3b':'#15803d';
+  pg.fillRect(0,165,460,65);
+
+  // Vẽ mô hình Tòa nhà địa điểm đang đứng
+  var bCol=p.col||'#b5482a';
+  pg.fillStyle=bCol;pg.fillRect(85,88,160,26);
+  pg.fillStyle='#f5ebd6';pg.fillRect(92,114,146,54);
+  for(var wx=104;wx<225;wx+=24){
+    for(var wy=122;wy<155;wy+=16){
+      pg.fillStyle=wMode.id==='night'?'#fde047':'#0284c7';
+      pg.fillRect(wx,wy,14,10);
+    }
+  }
+  // Hàng cây xanh quanh tòa nhà
+  pg.fillStyle='#166534';
+  pg.fillRect(42,130,28,28);pg.fillRect(255,126,32,30);
+  pg.fillStyle='#78350f';
+  pg.fillRect(52,158,8,12);pg.fillRect(267,156,8,14);
+
+  // Khung viền Bưu thiếp & Tem thư NTU
+  pg.strokeStyle='#ffffff';pg.lineWidth=8;pg.strokeRect(4,4,452,262);
+  pg.fillStyle='#141b17';pg.fillRect(0,218,460,52);
+  pg.fillStyle='#ffd35a';pg.font='700 15px "Be Vietnam Pro", sans-serif';
+  pg.fillText('📍 '+p.name.toUpperCase(),16,240);
+  pg.fillStyle='#cbd5e1';pg.font='500 12px "JetBrains Mono", monospace';
+  pg.fillText('NTU CAMPUS QUEST 2.0 · ĐỘ CAO '+pElev+'M · '+wMode.label.toUpperCase(),16,258);
+
+  // Con dấu Tem thư góc phải trên
+  pg.fillStyle='#fef3c7';pg.fillRect(392,16,50,58);
+  pg.strokeStyle='#b45309';pg.lineWidth=2;pg.strokeRect(395,19,44,52);
+  pg.fillStyle='#92400e';pg.font='700 10px "JetBrains Mono", monospace';
+  pg.fillText('NTU 02',399,36);pg.fillText('STAMP',401,50);pg.fillText(pElev+'m',406,64);
+
+  document.getElementById('btnDownloadPostcard').addEventListener('click',function(){
+    var a=document.createElement('a');
+    a.download='NTU-Postcard-'+p.id+'.png';
+    a.href=pc.toDataURL('image/png');
+    a.click();
+  });
+  document.getElementById('btnClosePostcard').addEventListener('click',closeModal);
+}
+
+/* Giải chạy bộ NTU Campus Trail */
+var trailBanner=document.getElementById('trailBanner');
+var trailCpText=document.getElementById('trailCpText');
+var trailTimerText=document.getElementById('trailTimerText');
+
+function startTrailRace(){
+  sfxQuestWin();
+  if(gameState.droneMode)toggleDroneMode(false);
+  trailState.active=true;
+  trailState.cpIndex=0;
+  trailState.startTime=performance.now();
+  trailState.elapsed=0;
+  gameState.stamina=gameState.maxStamina;
+  // Đặt vận động viên tại vạch xuất phát Cổng chính
+  var gateP=getPlace('gate');
+  P.x=gateP.axe;P.y=gateP.aye;route=[];
+  trailBanner.hidden=false;
+  document.getElementById('btnTrail').classList.add('active-mode');
+  updateTrailUI();
+  addFloatText('🏃 XUẤT PHÁT NTU CAMPUS TRAIL!',P.x,P.y-16,'#ffd35a');
+}
+
+function stopTrailRace(){
+  trailState.active=false;
+  trailBanner.hidden=true;
+  document.getElementById('btnTrail').classList.remove('active-mode');
+}
+
+function updateTrailUI(){
+  if(!trailState.active)return;
+  var cpId=TRAIL_CPS[trailState.cpIndex];
+  var cpPlace=getPlace(cpId);
+  trailCpText.textContent='CP '+(trailState.cpIndex+1)+'/6: '+cpPlace.short+' (⛰️'+getElevation(cpPlace.axe,cpPlace.aye)+'m)';
+  trailTimerText.textContent='⏱ '+trailState.elapsed.toFixed(1)+'s';
+}
+
+document.getElementById('btnTrail').addEventListener('click',function(){
+  if(trailState.active)stopTrailRace();
+  else startTrailRace();
+});
+document.getElementById('btnTrailGuide').addEventListener('click',goToNextQuest);
+document.getElementById('btnTrailStop').addEventListener('click',stopTrailRace);
+
+/* ============================================================================
+   8. HỆ THỐNG MODAL & 8 MINI-GAME THỬ THÁCH (CÓ TÍCH HỢP GỢI Ý HỆ ĐẠI DƯƠNG)
+   ============================================================================ */
+var modalBackdrop=document.getElementById('modalBackdrop');
+var modalBadge=document.getElementById('modalBadge');
+var modalTitle=document.getElementById('modalTitle');
+var modalBody=document.getElementById('modalBody');
+var modalCloseBtn=document.getElementById('modalCloseBtn');
+var activeTimer=null;
+
+function closeModal(){
+  if(activeTimer){clearInterval(activeTimer);activeTimer=null;}
+  modalBackdrop.hidden=true;
+  cv.focus({preventScroll:true});
+}
+modalCloseBtn.addEventListener('click',closeModal);
+modalBackdrop.addEventListener('click',function(e){if(e.target===modalBackdrop)closeModal();});
+
+function getOceanHintBanner(placeId){
+  if(gameState.playerClass!=='ocean')return '';
+  var q=QUEST_STATIONS[placeId];
+  if(!q||!q.oceanHint)return '';
+  return '<div style="padding:8px 11px;border-radius:8px;background:#e0f2fe;color:#0369a1;border:1.5px solid #0284c7;font-size:13px;font-weight:600">'+q.oceanHint+'</div>';
+}
+
+function openQuestModal(placeId){
+  if(activeTimer){clearInterval(activeTimer);activeTimer=null;}
+  var q=QUEST_STATIONS[placeId];
+  if(!q)return;
+  modalBackdrop.hidden=false;
+  modalBadge.textContent=q.badge+' · +'+q.xp+' XP';
+  modalTitle.textContent=q.title;
+  modalBody.innerHTML='';
+
+  if(placeId==='gate')buildGateQuiz();
+  else if(placeId==='g6')buildITBugGame();
+  else if(placeId==='main')buildAdminOrderGame();
+  else if(placeId==='a6')buildMuseumMemoryGame();
+  else if(placeId==='canteen')buildCanteenGame();
+  else if(placeId==='pitch')buildPitchPenaltyGame();
+  else if(placeId==='lib')buildLibraryQuizGame();
+  else if(placeId==='ht3')buildGraduationGame();
+}
+
+/* --- TRẠM 1: CỔNG CHÍNH (QUIZ TÂN SINH VIÊN) --- */
+function buildGateQuiz(){
+  modalBody.innerHTML=
+    getOceanHintBanner('gate')+
+    '<p>Chào mừng tân sinh viên đến với <strong>Cổng chính Trường Đại học Nha Trang</strong>! Hãy trả lời câu hỏi nhập môn sau để làm thủ tục bước vào giảng đường:</p>'+
+    '<p style="font-weight:700">Câu hỏi: Khuôn viên chính của Trường Đại học Nha Trang tọa lạc tại địa chỉ nào?</p>'+
+    '<div class="quiz-options" id="gateOpts"></div>'+
+    '<div id="gateMsg"></div>';
+  var opts=[
+    {t:'Số 02 đường Nguyễn Đình Chiểu, Nha Trang',ok:true},
+    {t:'Số 15 đường Tôn Thất Tùng, Nha Trang',ok:false},
+    {t:'Số 86 đường Trần Phú, Nha Trang',ok:false},
+    {t:'Số 102 đường Nguyễn Thiện Thuật, Nha Trang',ok:false}
+  ];
+  var wrap=document.getElementById('gateOpts'),msg=document.getElementById('gateMsg');
+  opts.forEach(function(o){
+    var b=document.createElement('button');b.type='button';b.className='quiz-btn';b.textContent=o.t;
+    b.addEventListener('click',function(){
+      if(o.ok){
+        b.classList.add('correct');
+        msg.className='feedback-msg ok';
+        msg.innerHTML='🎉 Chính xác! Số 02 Nguyễn Đình Chiểu là địa chỉ quen thuộc của bao thế hệ sinh viên NTU. Bạn nhận được <strong>+100 XP</strong>!';
+        completeQuest('gate');
+      }else{
+        b.classList.add('wrong');sfxError();
+        msg.className='feedback-msg err';
+        msg.textContent='Chưa đúng rồi! Hãy nhìn dòng mô tả của Cổng chính trên sơ đồ nhé.';
+      }
+    });
+    wrap.appendChild(b);
+  });
+}
+
+/* --- TRẠM 2: GIẢNG ĐƯỜNG G-6 (FIX BUG ĐỒ ÁN IT) --- */
+function buildITBugGame(){
+  var bugsHit=0,goal=5,timeLeft=gameState.playerClass==='ocean'?16:12;
+  modalBody.innerHTML=
+    getOceanHintBanner('g6')+
+    '<p>Bạn đang ở tầng 2 <strong>Giảng đường G-6 (Khoa Công nghệ Thông tin)</strong>. Server đồ án đang xuất hiện bug! Hãy click đập đủ <strong>5 con bọ (🐛)</strong> trong '+timeLeft+' giây!</p>'+
+    '<div class="terminal-box" id="termBox">'+
+      '<div class="terminal-hud"><span>root@ntu-it-g6:~/project$ ./debug.sh</span><span id="bugStat">Đã diệt: 0/5 | ⏱ '+timeLeft+'s</span></div>'+
+      '<div id="bugArea" style="position:relative;height:175px"></div>'+
+    '</div>'+
+    '<div id="bugMsg"></div>';
+
+  var area=document.getElementById('bugArea'),stat=document.getElementById('bugStat'),msg=document.getElementById('bugMsg');
+
+  function spawnBug(){
+    area.innerHTML='';
+    if(bugsHit>=goal||timeLeft<=0)return;
+    var btn=document.createElement('button');
+    btn.type='button';btn.className='bug-target';
+    var labels=['🐛 NullPointer','👾 SegFault','🐛 SyntaxErr','🕷 InfiniteLoop','🐛 CorsError'];
+    btn.textContent=labels[bugsHit%labels.length];
+    btn.style.left=Math.floor(5+Math.random()*65)+'%';
+    btn.style.top=Math.floor(5+Math.random()*70)+'%';
+    btn.addEventListener('click',function(){
+      bugsHit++;sfxClick();
+      stat.textContent='Đã diệt: '+bugsHit+'/'+goal+' | ⏱ '+timeLeft+'s';
+      if(bugsHit>=goal){
+        clearInterval(activeTimer);activeTimer=null;
+        area.innerHTML='<div style="color:#4ade80;padding:30px;text-align:center;font-weight:700">✔ BUILD SUCCESSFUL! 0 Errors, 0 Bugs.</div>';
+        msg.className='feedback-msg ok';
+        msg.innerHTML='💻 Xuất sắc! Đồ án CNTT đã chạy mượt mà. Bạn nhận được <strong>+100 XP</strong>!';
+        completeQuest('g6');
+      }else{
+        spawnBug();
+      }
+    });
+    area.appendChild(btn);
+  }
+
+  spawnBug();
+  activeTimer=setInterval(function(){
+    timeLeft--;
+    stat.textContent='Đã diệt: '+bugsHit+'/'+goal+' | ⏱ '+timeLeft+'s';
+    if(timeLeft<=0&&bugsHit<goal){
+      clearInterval(activeTimer);activeTimer=null;
+      sfxError();
+      area.innerHTML='<div style="color:#f87171;padding:24px;text-align:center">✖ TIMEOUT! Hãy bấm thử lại nhé.</div>';
+      var retry=document.createElement('button');
+      retry.type='button';retry.className='btn-action quest';retry.textContent='🔄 Chạy lại trình Debug';
+      retry.addEventListener('click',buildITBugGame);
+      msg.innerHTML='';msg.appendChild(retry);
+    }
+  },1000);
+}
+
+/* --- TRẠM 3: TÒA NHÀ CHÍNH (XIN DẤU HÀNH CHÍNH) --- */
+function buildAdminOrderGame(){
+  var steps=[
+    {step:1,text:'Bước 1: Điền đầy đủ thông tin vào mẫu đơn sinh viên'},
+    {step:2,text:'Bước 2: Xin chữ ký xác nhận của Ban Chủ nhiệm Khoa/Viện'},
+    {step:3,text:'Bước 3: Nộp hồ sơ tại bộ phận Một cửa - Tòa nhà chính'},
+    {step:4,text:'Bước 4: Nhận giấy xác nhận đã đóng dấu đỏ của Trường'}
+  ];
+  var shuffled=[steps[2],steps[0],steps[3],steps[1]];
+  var expected=1;
+
+  modalBody.innerHTML=
+    getOceanHintBanner('main')+
+    '<p>Tại <strong>Tòa nhà chính (Main Building)</strong>, bạn cần hoàn tất thủ tục xin giấy xác nhận sinh viên. Hãy bấm chọn các bước theo <strong>đúng thứ tự từ Bước 1 đến Bước 4</strong>:</p>'+
+    '<div class="quiz-options" id="adminOpts"></div>'+
+    '<div id="adminMsg"></div>';
+
+  var wrap=document.getElementById('adminOpts'),msg=document.getElementById('adminMsg');
+  shuffled.forEach(function(st){
+    var b=document.createElement('button');b.type='button';b.className='quiz-btn';
+    b.textContent=st.text;
+    b.addEventListener('click',function(){
+      if(b.disabled)return;
+      if(st.step===expected){
+        b.classList.add('correct');b.disabled=true;sfxClick();
+        expected++;
+        if(expected>4){
+          msg.className='feedback-msg ok';
+          msg.innerHTML='🏛️ Đóng dấu thành công! Bạn nắm rất vững quy trình hành chính tại Tòa nhà chính. Nhận <strong>+100 XP</strong>!';
+          completeQuest('main');
+        }
+      }else{
+        sfxError();
+        msg.className='feedback-msg err';
+        msg.textContent='Chưa đúng thứ tự! Bạn cần chọn Bước '+expected+' trước.';
+      }
+    });
+    wrap.appendChild(b);
+  });
+}
+
+/* --- TRẠM 4: TÒA A-6 (BẢO TÀNG ĐỘNG - THỰC VẬT THỦY SINH) --- */
+function buildMuseumMemoryGame(){
+  var icons=['🐟','🦀','🐙','🪸','🐟','🦀','🐙','🪸'];
+  for(var i=icons.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=icons[i];icons[i]=icons[j];icons[j]=t;}
+  var openCards=[],matched=0,locked=false;
+
+  modalBody.innerHTML=
+    getOceanHintBanner('a6')+
+    '<p>Chào mừng tới <strong>Bảo tàng Động – Thực vật Thủy sinh (Tòa A-6)</strong>. Hãy lật và ghép đúng <strong>4 cặp mẫu sinh vật biển</strong> trưng bày tại bảo tàng:</p>'+
+    '<div class="memory-grid" id="memGrid"></div>'+
+    '<div id="memMsg"></div>';
+
+  var grid=document.getElementById('memGrid'),msg=document.getElementById('memMsg');
+  var cardBtns=[];
+  icons.forEach(function(ic,idx){
+    var btn=document.createElement('button');btn.type='button';btn.className='mem-card';
+    btn.textContent=gameState.playerClass==='ocean'?ic:'?';
+    btn.addEventListener('click',function(){
+      if(locked||btn.classList.contains('flipped')||btn.classList.contains('matched'))return;
+      sfxClick();
+      btn.classList.add('flipped');
+      btn.textContent=ic;
+      openCards.push({el:btn,ic:ic,idx:idx});
+      if(openCards.length===2){
+        locked=true;
+        var a=openCards[0],b=openCards[1];
+        if(a.ic===b.ic){
+          a.el.classList.add('matched');b.el.classList.add('matched');
+          openCards=[];locked=false;matched++;
+          if(matched===4){
+            msg.className='feedback-msg ok';
+            msg.innerHTML='🪸 Tuyệt vời! Bạn đã phân loại hoàn chỉnh bộ sưu tập mẫu vật biển tại Tòa A-6. Nhận <strong>+100 XP</strong>!';
+            completeQuest('a6');
+          }
+        }else{
+          setTimeout(function(){
+            a.el.classList.remove('flipped');a.el.textContent='?';
+            b.el.classList.remove('flipped');b.el.textContent='?';
+            openCards=[];locked=false;
+          },550);
+        }
+      }
+    });
+    cardBtns.push(btn);
+    grid.appendChild(btn);
+  });
+  if(gameState.playerClass==='ocean'){
+    locked=true;
+    setTimeout(function(){
+      cardBtns.forEach(function(b){if(!b.classList.contains('matched'))b.textContent='?';});
+      locked=false;
+    },1200);
+  }
+}
+
+/* --- TRẠM 5: NHÀ ĂN (BỮA TRƯA SINH VIÊN) --- */
+function buildCanteenGame(){
+  var foods=[
+    {icon:'🍜',name:'Bún cá Nha Trang đặc sản'},
+    {icon:'🍱',name:'Cơm khay sinh viên đủ chất'},
+    {icon:'🥬',name:'Canh rau xanh mát lành'},
+    {icon:'🧃',name:'Nước trái cây tươi nhiệt đới'}
+  ];
+  var picked=0;
+  modalBody.innerHTML=
+    getOceanHintBanner('canteen')+
+    '<p>Giờ nghỉ trưa tại <strong>Nhà ăn sinh viên (Canteen)</strong>! Hãy chọn đủ 4 món ăn trong thực đơn để nạp đầy <strong>100% Thể lực (Stamina)</strong> và hoàn thành trạm:</p>'+
+    '<div class="food-grid" id="foodGrid"></div>'+
+    '<div id="foodMsg"></div>';
+  var grid=document.getElementById('foodGrid'),msg=document.getElementById('foodMsg');
+  foods.forEach(function(f){
+    var b=document.createElement('button');b.type='button';b.className='food-item';
+    b.innerHTML='<span style="font-size:24px">'+f.icon+'</span><span>'+f.name+'</span>';
+    b.addEventListener('click',function(){
+      if(b.classList.contains('picked'))return;
+      b.classList.add('picked');sfxClick();picked++;
+      if(picked===foods.length){
+        gameState.stamina=gameState.maxStamina;
+        updateStaminaHUD();
+        msg.className='feedback-msg ok';
+        msg.innerHTML='🍱 Chúc ngon miệng! Thể lực đã hồi đầy <strong>100%</strong> và bạn nhận thêm <strong>+100 XP</strong>!';
+        completeQuest('canteen');
+      }
+    });
+    grid.appendChild(b);
+  });
+}
+
+/* --- TRẠM 6: SÂN BÓNG ĐÁ (SÚT PHẠT NTU CUP) --- */
+function buildPitchPenaltyGame(){
+  var goals=0,pos=50,dir=1;
+  modalBody.innerHTML=
+    getOceanHintBanner('pitch')+
+    '<p>Giải bóng đá sinh viên tại <strong>Sân bóng đá NTU</strong> đang gay cấn! Hãy canh con trỏ chạy vào <strong>vùng màu xanh lá</strong> ở giữa rồi bấm <strong>⚽ SÚT BÓNG!</strong> để ghi đủ 3 bàn thắng:</p>'+
+    '<div class="pitch-game">'+
+      '<div style="font-weight:700;font-size:16px" id="goalScore">⚽ Bàn thắng: 0 / 3</div>'+
+      '<div class="power-bar"><div class="sweet-spot"></div><div class="power-cursor" id="pCursor" style="left:50%"></div></div>'+
+      '<button type="button" class="btn-action quest" id="kickBtn" style="font-size:16px">⚽ SÚT BÓNG NGAY!</button>'+
+    '</div>'+
+    '<div id="pitchMsg"></div>';
+
+  var cursor=document.getElementById('pCursor'),scoreEl=document.getElementById('goalScore');
+  var kickBtn=document.getElementById('kickBtn'),msg=document.getElementById('pitchMsg');
+
+  activeTimer=setInterval(function(){
+    pos+=dir*3.6;
+    if(pos>=96){pos=96;dir=-1;}
+    if(pos<=4){pos=4;dir=1;}
+    cursor.style.left=pos+'%';
+  },25);
+
+  var minZone=gameState.playerClass==='ocean'?30:36;
+  var maxZone=gameState.playerClass==='ocean'?70:64;
+
+  kickBtn.addEventListener('click',function(){
+    if(goals>=3)return;
+    if(pos>=minZone&&pos<=maxZone){
+      goals++;sfxCheckin();
+      scoreEl.textContent='⚽ Bàn thắng: '+goals+' / 3 — VÀOOO!';
+      if(goals>=3){
+        clearInterval(activeTimer);activeTimer=null;
+        kickBtn.disabled=true;
+        msg.className='feedback-msg ok';
+        msg.innerHTML='🏆 VÔ ĐỊCH NTU CUP! Cú hat-trick sút phạt hoàn hảo mang về cho bạn <strong>+100 XP</strong>!';
+        completeQuest('pitch');
+      }
+    }else{
+      sfxError();
+      scoreEl.textContent='⚽ Bàn thắng: '+goals+' / 3 — Bóng đi chệch cột dọc, sút lại nào!';
+    }
+  });
+}
+
+/* --- TRẠM 7: THƯ VIỆN (TRA CỨU SƠ ĐỒ KHOA/VIỆN) --- */
+function buildLibraryQuizGame(){
+  var step=0;
+  var questions=[
+    {
+      q:'Câu 1/2: Theo sơ đồ trường, "Khoa Kinh tế" và "Khoa Sau đại học" đặt tại tòa nhà nào gần Cổng chính?',
+      opts:[
+        {t:'Tòa A-3',ok:true},
+        {t:'Tòa B-3',ok:false},
+        {t:'Ký túc xá K-1',ok:false}
+      ]
+    },
+    {
+      q:'Câu 2/2: "Khoa Cơ khí", "Khoa Ngoại ngữ" và "Khoa Kế toán – Tài chính" cùng nằm tại Giảng đường nào?',
+      opts:[
+        {t:'Giảng đường G-1',ok:true},
+        {t:'Giảng đường G-8',ok:false},
+        {t:'Hội trường HT-1',ok:false}
+      ]
+    }
+  ];
+
+  function renderQ(){
+    var cur=questions[step];
+    modalBody.innerHTML=
+      getOceanHintBanner('lib')+
+      '<p>Tại tổ hợp <strong>Thư viện (TV-2, TV-3, TV-4)</strong> trên đỉnh đồi 64m, hãy tra cứu dữ liệu sơ đồ trường để trả lời 2 câu hỏi định vị Khoa/Viện:</p>'+
+      '<p style="font-weight:700">'+cur.q+'</p>'+
+      '<div class="quiz-options" id="libOpts"></div>'+
+      '<div id="libMsg"></div>';
+    var wrap=document.getElementById('libOpts'),msg=document.getElementById('libMsg');
+    cur.opts.forEach(function(o){
+      var b=document.createElement('button');b.type='button';b.className='quiz-btn';b.textContent=o.t;
+      b.addEventListener('click',function(){
+        if(o.ok){
+          b.classList.add('correct');sfxClick();
+          step++;
+          if(step<questions.length){
+            setTimeout(renderQ,450);
+          }else{
+            msg.className='feedback-msg ok';
+            msg.innerHTML='📚 Tra cứu xuất sắc! Bạn đã nắm rõ vị trí các Khoa tại NTU và nhận được <strong>+100 XP</strong>!';
+            completeQuest('lib');
+          }
+        }else{
+          b.classList.add('wrong');sfxError();
+          msg.className='feedback-msg err';
+          msg.textContent='Chưa chính xác! Hãy thử phương án khác nhé.';
+        }
+      });
+      wrap.appendChild(b);
+    });
+  }
+  renderQ();
+}
+
+/* --- TRẠM 8: HỘI TRƯỜNG HT-3 (TỔNG KẾT TỐT NGHIỆP) --- */
+function buildGraduationGame(){
+  modalBody.innerHTML=
+    getOceanHintBanner('ht3')+
+    '<p>Chào mừng đến <strong>Hội trường HT-3</strong> ở phía Tây khuôn viên! Đây là câu hỏi tổng kết cuối cùng của hành trình:</p>'+
+    '<p style="font-weight:700">Câu hỏi: Đơn vị nghiên cứu đặc trưng nào được đặt tại tầng 2 của Hội trường HT-3 trên sơ đồ trường?</p>'+
+    '<div class="quiz-options" id="ht3Opts"></div>'+
+    '<div id="ht3Msg"></div>';
+  var opts=[
+    {t:'Viện Khoa học Biển và Công nghệ Khai thác Thủy sản',ok:true},
+    {t:'Khoa Kỹ thuật Giao thông',ok:false},
+    {t:'Khoa Lý luận Chính trị',ok:false}
+  ];
+  var wrap=document.getElementById('ht3Opts'),msg=document.getElementById('ht3Msg');
+  opts.forEach(function(o){
+    var b=document.createElement('button');b.type='button';b.className='quiz-btn';b.textContent=o.t;
+    b.addEventListener('click',function(){
+      if(o.ok){
+        b.classList.add('correct');
+        completeQuest('ht3');
+        triggerGraduationFireworks();
+        var doneCount=Object.keys(gameState.questsDone).length;
+        var checkinCount=Object.keys(gameState.checkedIn).length;
+        msg.className='feedback-msg ok';
+        msg.innerHTML='🎓 <strong>CHÚC MỪNG TỐT NGHIỆP HÀNH TRÌNH KHÁM PHÁ NTU!</strong><br>'+
+          'Bạn đã nhận <strong>+150 XP</strong>! Hiện tại bạn đã hoàn thành <strong>'+doneCount+'/8 trạm</strong> và check-in <strong>'+checkinCount+'/35 địa điểm</strong>. Hãy ngắm pháo hoa rực rỡ trên bầu trời và biển Nha Trang!';
+      }else{
+        b.classList.add('wrong');sfxError();
+        msg.className='feedback-msg err';
+        msg.textContent='Hãy xem gợi ý đơn vị trực thuộc của HT-3 ở thẻ thông tin nhé!';
+      }
+    });
+    wrap.appendChild(b);
+  });
+}
+
+/* --- MODAL SỔ TAY TỔNG HỢP & CHƠI LẠI --- */
+function openNotebookModal(){
+  modalBackdrop.hidden=false;
+  modalBadge.textContent='SỔ TAY HÀNH TRÌNH NTU 2.0';
+  modalTitle.textContent='Tổng kết Khám phá Đại học Nha Trang';
+  var qCount=Object.keys(gameState.questsDone).length;
+  var cCount=Object.keys(gameState.checkedIn).length;
+  var catCount=Object.keys(gameState.catsPetted).length;
+  var trailRec=gameState.bestTrailSec?(gameState.bestTrailSec.toFixed(1)+' giây'):'Chưa có kỷ lục';
+  var html='<p>Danh hiệu: <strong>'+getRankTitle(gameState.xp)+'</strong> ('+gameState.xp+' XP) · Hệ: <strong>'+CLASSES[gameState.playerClass].name+'</strong></p>'+
+           '<p style="font-size:13px;color:var(--muted)">🎯 Trạm thử thách: <strong>'+qCount+'/8</strong> · 📍 Check-in: <strong>'+cCount+'/35</strong> · 🐱 Mèo đã nựng: <strong>'+catCount+'/4</strong> · 📸 Postcard: <strong>'+gameState.postcardsTaken+'</strong> · 🏅 Kỷ lục NTU Trail: <strong>'+trailRec+'</strong></p>';
+  html+='<div style="display:grid;gap:6px;max-height:260px;overflow:auto">';
+  Object.keys(QUEST_STATIONS).forEach(function(pid){
+    var q=QUEST_STATIONS[pid],p=getPlace(pid),done=!!gameState.questsDone[pid];
+    html+='<div style="padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);display:flex;justify-content:space-between;align-items:center;gap:8px">'+
+          '<div><strong>'+(done?'✅ ':'🎯 ')+q.title+'</strong><div style="font-size:12px;color:var(--muted)">'+p.name+' (⛰️ '+getElevation(p.axe,p.aye)+'m)</div></div>'+
+          '<button type="button" class="btn-util go-quest-btn" data-pid="'+pid+'">'+(done?'Đã xong':'🧭 Đi tới')+'</button>'+
+          '</div>';
+  });
+  html+='</div>';
+  modalBody.innerHTML=html;
+  Array.prototype.forEach.call(modalBody.querySelectorAll('.go-quest-btn'),function(btn){
+    btn.addEventListener('click',function(){
+      var pid=btn.getAttribute('data-pid');
+      closeModal();
+      goTo(getPlace(pid));
+    });
+  });
+}
+
+function openResetModal(){
+  modalBackdrop.hidden=false;
+  modalBadge.textContent='XÁC NHẬN HỆ THỐNG';
+  modalTitle.textContent='Đặt lại tiến độ chơi?';
+  modalBody.innerHTML=
+    '<p>Bạn có muốn đặt lại toàn bộ tiến độ XP, lịch sử Check-in 35 địa điểm, 8 Trạm Thử Thách và kỷ lục chạy Trail để bắt đầu lại từ đầu tại Cổng chính không?</p>'+
+    '<div style="display:flex;gap:10px;justify-content:flex-end">'+
+      '<button type="button" class="btn-util" id="cancelResetBtn">Hủy bỏ</button>'+
+      '<button type="button" class="btn-util primary" id="confirmResetBtn" style="background:#dc2626;border-color:#dc2626;color:#fff">🔄 Đồng ý Chơi lại</button>'+
+    '</div>';
+  document.getElementById('cancelResetBtn').addEventListener('click',closeModal);
+  document.getElementById('confirmResetBtn').addEventListener('click',function(){
+    stopTrailRace();
+    gameState={
+      xp:60,playerClass:'it',checkedIn:{},questsDone:{},catsPetted:{},
+      postcardsTaken:0,bestTrailSec:null,stamina:100,maxStamina:100,
+      sprintToggle:false,droneMode:false,buffSpeedTimer:0,buffInfStaminaTimer:0
+    };
+    saveState();
+    P.x=X(560);P.y=Y(600);route=[];
+    refreshPinLabels();updateClassUI();updateHUD();updateStaminaHUD();renderList();renderQuestList();renderCanteenShop();showInfo();updateProximityUI();
+    closeModal();
+    addFloatText('Bắt đầu hành trình mới!',P.x,P.y-12,'#ffd35a');
+  });
+}
+
+/* ============================================================================
+   9. SỰ KIỆN ĐIỀU KHIỂN, THỜI TIẾT & CHẾ ĐỘ FLYCAM
+   ============================================================================ */
+var btnWeather=document.getElementById('btnWeather');
+btnWeather.addEventListener('click',function(){
+  weatherIdx=(weatherIdx+1)%WEATHER_MODES.length;
+  var wm=WEATHER_MODES[weatherIdx];
+  btnWeather.textContent=wm.label;
+  sfxClick();
+  addFloatText(wm.label,P.x,P.y-14,'#fde047');
+});
+
+var btnDrone=document.getElementById('btnDrone');
+function toggleDroneMode(force){
+  gameState.droneMode=typeof force==='boolean'?force:!gameState.droneMode;
+  btnDrone.textContent=gameState.droneMode?'🚁 Flycam: Bật':'🚁 Flycam: Tắt';
+  btnDrone.classList.toggle('active-mode',gameState.droneMode);
+  if(!gameState.droneMode){
+    // Khi hạ cánh Flycam, đưa nhân vật về ô đường trống gần nhất
+    var f=nearestFree(Math.floor(P.x/CS),Math.floor(P.y/CS));
+    if(f){P.x=f[0]*CS+1;P.y=f[1]*CS+1;}
+  }
+  sfxClick();
+  showInfo();
+  addFloatText(gameState.droneMode?'🚁 Đã cất cánh Flycam!':'🚶 Đã hạ cánh Flycam',P.x,P.y-14,'#38bdf8');
+}
+btnDrone.addEventListener('click',function(){toggleDroneMode();});
+document.getElementById('btnPostcard').addEventListener('click',function(){openPostcardModal();});
+
+document.getElementById('btnSound').addEventListener('click',function(){
+  soundOn=!soundOn;
+  this.textContent=soundOn?'🔊 Âm thanh: Bật':'🔇 Âm thanh: Tắt';
+  if(soundOn)sfxClick();
+});
+document.getElementById('btnGuide').addEventListener('click',function(){sfxClick();openNotebookModal();});
+document.getElementById('btnReset').addEventListener('click',function(){sfxClick();openResetModal();});
+document.getElementById('btnNextQuest').addEventListener('click',goToNextQuest);
+
+var btnSprintToggle=document.getElementById('btnSprintToggle');
+btnSprintToggle.addEventListener('click',function(){
+  gameState.sprintToggle=!gameState.sprintToggle;
+  btnSprintToggle.classList.toggle('sprint-on',gameState.sprintToggle);
+  btnSprintToggle.textContent=gameState.sprintToggle?'⚡ Đang bật Chạy nhanh':'⚡ Chạy nhanh';
+  sfxClick();
+});
+
+var tabBtnPlaces=document.getElementById('tabBtnPlaces'),tabBtnQuests=document.getElementById('tabBtnQuests'),tabBtnLife=document.getElementById('tabBtnLife');
+var panelPlaces=document.getElementById('panelPlaces'),panelQuests=document.getElementById('panelQuests'),panelLife=document.getElementById('panelLife');
+function switchSideTab(which){
+  tabBtnPlaces.classList.toggle('active',which==='places');
+  tabBtnQuests.classList.toggle('active',which==='quests');
+  tabBtnLife.classList.toggle('active',which==='life');
+  panelPlaces.hidden=(which!=='places');
+  panelQuests.hidden=(which!=='quests');
+  panelLife.hidden=(which!=='life');
+  if(which==='quests')renderQuestList();
+  if(which==='life')renderCanteenShop();
+  sfxClick();
+}
+tabBtnPlaces.addEventListener('click',function(){switchSideTab('places');});
+tabBtnQuests.addEventListener('click',function(){switchSideTab('quests');});
+tabBtnLife.addEventListener('click',function(){switchSideTab('life');});
+
+function triggerPrimaryAction(){
+  if(!modalBackdrop.hidden)return;
+  if(nearbyCat&&!gameState.catsPetted[nearbyCat.id]){
+    petCat(nearbyCat);
+    return;
+  }
+  var target=nearbyPlace||(selected?getPlace(selected):null);
+  if(target&&distTo(target)<11){
+    if(!gameState.checkedIn[target.id]){
+      doCheckin(target);
+      return;
+    }
+    if(QUEST_STATIONS[target.id]){
+      openQuestModal(target.id);
+      return;
+    }
+  }
+  if(nearbyCat){petCat(nearbyCat);return;}
+  if(nearbyPlace)doCheckin(nearbyPlace);
+}
+
+var map={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};
+window.addEventListener('keydown',function(e){
+  if(e.target&&e.target.tagName==='INPUT')return;
+  if(e.code==='Escape'&&!modalBackdrop.hidden){closeModal();return;}
+  if(!modalBackdrop.hidden)return;
+  if(e.code==='ShiftLeft'||e.code==='ShiftRight'){keys.shift=1;return;}
+  if(e.code==='KeyF'){e.preventDefault();toggleDroneMode();return;}
+  if(e.code==='KeyP'){e.preventDefault();openPostcardModal();return;}
+  if(e.code==='Space'||e.code==='KeyE'){e.preventDefault();triggerPrimaryAction();return;}
+  var k=map[e.code];if(!k)return;keys[k]=1;e.preventDefault();
+});
+window.addEventListener('keyup',function(e){
+  if(e.code==='ShiftLeft'||e.code==='ShiftRight'){keys.shift=0;return;}
+  var k=map[e.code];if(k)keys[k]=0;
+});
+window.addEventListener('blur',function(){keys={up:0,down:0,left:0,right:0,shift:0};});
+
+Array.prototype.forEach.call(document.querySelectorAll('.dpad button'),function(b){
+  var k=b.getAttribute('data-k');
+  b.addEventListener('pointerdown',function(e){e.preventDefault();keys[k]=1;});
+  ['pointerup','pointerleave','pointercancel'].forEach(function(ev){b.addEventListener(ev,function(){keys[k]=0;});});
+});
+document.getElementById('mobileActBtn').addEventListener('click',triggerPrimaryAction);
+document.getElementById('mobileQuestNavBtn').addEventListener('click',goToNextQuest);
+
+cv.addEventListener('click',function(e){
+  var r=cv.getBoundingClientRect();
+  route=findRoute((e.clientX-r.left)/r.width*AW,(e.clientY-r.top)/r.height*AH);
+  cv.focus({preventScroll:true});
+});
+
+function fit(){stage.classList.toggle('compact',stage.clientWidth<760);}
+if(window.ResizeObserver)new ResizeObserver(fit).observe(stage);else window.addEventListener('resize',fit);
+fit();
+
+/* Khởi tạo giao diện ban đầu */
+refreshPinLabels();
+updateClassUI();
+renderChips();
+renderList();
+renderQuestList();
+renderCanteenShop();
+updateHUD();
+updateStaminaHUD();
+showInfo();
+
+/* ============================================================================
+   10. VÒNG LẶP GAME CHÍNH (GAME LOOP)
+   ============================================================================ */
+var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+var last=0,walkT=0,refillCooldown=0,seaWaveTimer=0;
+
+function frame(ts){
+  var dt=Math.min(0.05,(ts-last)/1000||0);last=ts;
+  var vx=keys.right-keys.left,vy=keys.down-keys.up;
+  var oldX=P.x,oldY=P.y,oldElev=getElevation(P.x,P.y);
+  P.moving=false;
+
+  // Cập nhật đồng hồ Buff Canteen
+  if(gameState.buffSpeedTimer>0){
+    gameState.buffSpeedTimer=Math.max(0,gameState.buffSpeedTimer-dt);
+    if(gameState.buffSpeedTimer===0)updateClassUI();
+  }
+  if(gameState.buffInfStaminaTimer>0){
+    gameState.buffInfStaminaTimer=Math.max(0,gameState.buffInfStaminaTimer-dt);
+    if(gameState.buffInfStaminaTimer===0)updateClassUI();
+  }
+
+  // Khoảng cách tới bờ biển Phạm Văn Đồng (Đông Nam)
+  var seaDist=Math.hypot(P.x-X(1250),P.y-Y(1120));
+
+  // Tính tốc độ di chuyển (phụ thuộc Hệ Sinh viên, Flycam, Buff Canteen & Độ dốc)
+  var wantsSprint=!!(keys.shift||gameState.sprintToggle);
+  P.sprinting=wantsSprint&&(gameState.stamina>2||gameState.droneMode||gameState.buffInfStaminaTimer>0);
+
+  var baseSpd=gameState.droneMode?128:(P.sprinting?95:55);
+  if(gameState.playerClass==='runner')baseSpd*=1.18;
+  if(gameState.playerClass==='ocean'&&seaDist<95)baseSpd*=1.22;
+  if(gameState.buffSpeedTimer>0)baseSpd*=1.35;
+
+  // Áp dụng hiệu ứng leo dốc / đổ dốc từ bước trước
+  if(!gameState.droneMode){
+    if(P.slopeState>0&&gameState.playerClass!=='runner')baseSpd*=0.78;
+    else if(P.slopeState<0)baseSpd*=1.25;
+  }
+
+  if(vx||vy){
+    route=[];
+    var len=Math.hypot(vx,vy),sx=vx/len*baseSpd*dt,sy=vy/len*baseSpd*dt;
+    if(sx&&boxFree(P.x+sx,P.y)){P.x+=sx;P.moving=true;}
+    if(sy&&boxFree(P.x,P.y+sy)){P.y+=sy;P.moving=true;}
+    P.dir=Math.abs(vx)>Math.abs(vy)?(vx>0?'right':'left'):(vy>0?'down':'up');
+  }else if(route.length){
+    var w=route[0],dx=w[0]-P.x,dy=w[1]-P.y,dist=Math.hypot(dx,dy),st=baseSpd*dt;
+    if(dist<=st){P.x=w[0];P.y=w[1];route.shift();}
+    else{P.x+=dx/dist*st;P.y+=dy/dist*st;}
+    if(dist>0.01){P.moving=true;P.dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');}
+  }
+
+  // Tính độ cao mới & Trạng thái leo dốc / đổ dốc
+  var newElev=getElevation(P.x,P.y);
+  P.elev=newElev;
+  if(P.moving){
+    var dyMove=P.y-oldY;
+    var dElev=newElev-oldElev;
+    if(dElev>0||(dyMove<-0.08&&newElev>=26))P.slopeState=1;
+    else if(dElev<0||(dyMove>0.08&&newElev>=22))P.slopeState=-1;
+    else P.slopeState=0;
+  }else{
+    P.slopeState=0;
+  }
+
+  // Cập nhật Thể lực (Stamina)
+  var freeDrone=gameState.droneMode&&gameState.playerClass==='media';
+  if(gameState.buffInfStaminaTimer>0||freeDrone){
+    gameState.stamina=gameState.maxStamina;
+  }else if(P.moving){
+    var drain=0;
+    if(P.sprinting)drain=22;
+    if(P.slopeState>0&&!gameState.droneMode)drain+=(gameState.playerClass==='runner'?6:16);
+    if(P.slopeState<0)drain=0; // Đổ dốc không tốn thể lực!
+    if(drain>0){
+      gameState.stamina=Math.max(0,gameState.stamina-drain*dt);
+      if(gameState.stamina<=0.5&&gameState.sprintToggle){
+        gameState.sprintToggle=false;
+        btnSprintToggle.classList.remove('sprint-on');
+        btnSprintToggle.textContent='⚡ Chạy nhanh';
+      }
+    }else{
+      gameState.stamina=Math.min(gameState.maxStamina,gameState.stamina+9*dt);
+    }
+  }else{
+    gameState.stamina=Math.min(gameState.maxStamina,gameState.stamina+20*dt);
+  }
+
+  if(P.moving){
+    walkT+=dt;
+    if(walkT>(P.sprinting?0.09:0.14)){
+      walkT=0;P.frame++;
+      var onP=pathA[(Math.min(AH-1,Math.floor(P.y))*AW+Math.min(AW-1,Math.floor(P.x)))*4+3]>0;
+      sfxStep(onP,gameState.droneMode);
+    }
+  }else{P.frame=0;}
+
+  // Cập nhật chuyển động của các NPC sinh viên
+  for(var ni=0;ni<NPCS.length;ni++){
+    var npc=NPCS[ni],targetPt=npc.pts[npc.cur];
+    var ndx=targetPt[0]-npc.x,ndy=targetPt[1]-npc.y,ndist=Math.hypot(ndx,ndy);
+    if(ndist<=npc.spd*dt){
+      npc.x=targetPt[0];npc.y=targetPt[1];
+      npc.cur+=npc.dir;
+      if(npc.cur>=npc.pts.length){npc.dir=-1;npc.cur=npc.pts.length-2;}
+      else if(npc.cur<0){npc.dir=1;npc.cur=1;}
+    }else{
+      npc.x+=ndx/ndist*npc.spd*dt;
+      npc.y+=ndy/ndist*npc.spd*dt;
+    }
+    npc.t+=dt;if(npc.t>0.18){npc.t=0;npc.frame++;}
+  }
+
+  // Kiểm tra Giải chạy bộ NTU Campus Trail
+  if(trailState.active){
+    trailState.elapsed=(performance.now()-trailState.startTime)/1000;
+    var curCpId=TRAIL_CPS[trailState.cpIndex];
+    var curCpPlace=getPlace(curCpId);
+    if(curCpPlace&&distTo(curCpPlace)<11){
+      sfxCheckin();
+      trailState.cpIndex++;
+      if(trailState.cpIndex>=TRAIL_CPS.length){
+        // Về đích tại Sân bóng đá!
+        var finalTime=trailState.elapsed;
+        stopTrailRace();
+        gameState.xp+=150;
+        if(!gameState.bestTrailSec||finalTime<gameState.bestTrailSec){
+          gameState.bestTrailSec=finalTime;
+        }
+        saveState();
+        updateHUD();
+        triggerGraduationFireworks();
+        addFloatText('🏅 VỀ ĐÍCH TRAIL: '+finalTime.toFixed(1)+'s (+150 XP)!',P.x,P.y-18,'#ffd35a');
+      }else{
+        var nxt=getPlace(TRAIL_CPS[trailState.cpIndex]);
+        addFloatText('✅ Qua CP'+trailState.cpIndex+'! Tiếp: '+nxt.short,P.x,P.y-15,'#4ade80');
+      }
+    }
+    updateTrailUI();
+  }
+
+  // Kiểm tra khoảng cách với 35 địa điểm & 4 chú Mèo Canteen
+  var best=null,bd=9.5;
+  PLACES.forEach(function(p){var d=distTo(p);if(d<bd){bd=d;best=p;}});
+
+  var foundCat=null;
+  for(var ci=0;ci<CAMPUS_CATS.length;ci++){
+    if(Math.hypot(P.x-CAMPUS_CATS[ci].x,P.y-CAMPUS_CATS[ci].y)<10){
+      foundCat=CAMPUS_CATS[ci];break;
+    }
+  }
+
+  // Hồi đầy thể lực khi đứng gần Nhà ăn (canteen) hoặc Ký túc xá (k1..k8)
+  if(refillCooldown>0)refillCooldown-=dt;
+  if(best&&(best.id==='canteen'||best.type==='dorm')&&gameState.stamina<gameState.maxStamina-8&&refillCooldown<=0){
+    gameState.stamina=gameState.maxStamina;
+    refillCooldown=4;
+    addFloatText('⚡ Hồi đầy Thể lực!',P.x,P.y-12,'#38bdf8');
+  }
+
+  updateStaminaHUD();
+  updateTerrainHUD(seaDist);
+  if(gameState.buffSpeedTimer>0||gameState.buffInfStaminaTimer>0)updateClassUI();
+
+  if(best!==nearbyPlace||foundCat!==nearbyCat){
+    nearbyPlace=best;
+    nearbyCat=foundCat;
+    if(best&&best.id!==selected){
+      select(best.id);
+    }else{
+      showInfo();
+    }
+    updateProximityUI();
+  }
+
+  // Âm thanh sóng biển rì rào khi đi gần bờ biển Phạm Văn Đồng
+  seaWaveTimer+=dt;
+  if(seaDist<75&&seaWaveTimer>2.4){
+    seaWaveTimer=0;
+    playTone(110,0.45,'sine',0,0.018);
+  }
+
+  // 1. Vẽ nền bản đồ tĩnh
+  ctx.drawImage(stat,0,0);
+
+  // 2. Vẽ sóng biển
+  var t=reduce?0:ts/1000;
+  ctx.fillStyle='#a9d6f0';
+  for(var i=0;i<seaPts.length;i++){var s=seaPts[i];ctx.fillRect(s[0]+Math.round(Math.sin(t*1.4+s[2])*2),s[1],3,1);}
+
+  // 3. Vẽ vòng tròn phát sáng (Pulsing Ring) tại 8 Trạm Thử Thách
+  var pulse=0.5+0.5*Math.sin(t*4);
+  Object.keys(QUEST_STATIONS).forEach(function(pid){
+    var p=getPlace(pid);
+    if(!p)return;
+    var done=!!gameState.questsDone[pid];
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(p.axe,p.aye-2,done?4:(5+pulse*2.5),0,6.2832);
+    ctx.strokeStyle=done?'rgba(22,163,74,.85)':'rgba(245,158,11,.95)';
+    ctx.lineWidth=1.5;
+    ctx.stroke();
+    ctx.fillStyle=done?'rgba(34,197,94,.28)':'rgba(255,211,90,.35)';
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // 3b. Vẽ Cổng vòm Checkpoint nếu đang trong Giải chạy NTU Campus Trail
+  if(trailState.active){
+    var cpTarget=getPlace(TRAIL_CPS[trailState.cpIndex]);
+    if(cpTarget){
+      ctx.save();
+      ctx.strokeStyle='#38bdf8';
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.arc(cpTarget.axe,cpTarget.aye-2,8+pulse*3,0,6.2832);
+      ctx.stroke();
+      // Đường chỉ hướng tới Checkpoint kế tiếp
+      ctx.setLineDash([2,2]);
+      ctx.beginPath();
+      ctx.moveTo(P.x,P.y);
+      ctx.lineTo(cpTarget.axe,cpTarget.aye);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  // 4. Vẽ đường dẫn (Route Line) khi di chuyển tự động
+  if(route.length){
+    ctx.save();
+    ctx.strokeStyle='#ffd35a';
+    ctx.lineWidth=2;
+    ctx.setLineDash([3,2]);
+    ctx.lineDashOffset=-t*12;
+    ctx.beginPath();
+    ctx.moveTo(P.x,P.y);
+    for(var rIdx=0;rIdx<route.length;rIdx++){
+      ctx.lineTo(route[rIdx][0],route[rIdx][1]);
+    }
+    ctx.stroke();
+    var lastPt=route[route.length-1];
+    ctx.fillStyle='#ef4444';
+    ctx.beginPath();ctx.arc(lastPt[0],lastPt[1],2.5,0,6.2832);ctx.fill();
+    ctx.restore();
+  }
+
+  // 5. Vẽ NPC Sinh viên & 4 chú Mèo Canteen
+  drawNPCsAndCats(ctx,t);
+
+  // 6. Vẽ Cây cối & Nhân vật (Y-sorting; nếu bật Flycam thì vẽ Drone bay trên tán cây)
+  var drawn=false;
+  for(var k=0;k<trees.length;k++){
+    var tr=trees[k];
+    if(!gameState.droneMode&&!drawn&&tr.y+8>P.y){drawPlayer(ctx,ts);drawn=true;}
+    drawTree(ctx,tr);
+  }
+  if(!drawn)drawPlayer(ctx,ts);
+
+  // 7. Hiệu ứng Ánh sáng Thời tiết (Hoàng hôn / Ban đêm / Mưa rào)
+  var curWeather=WEATHER_MODES[weatherIdx].id;
+  if(curWeather==='sunset'){
+    var sunGrad=ctx.createLinearGradient(0,0,AW,AH);
+    sunGrad.addColorStop(0,'rgba(124,45,18,.18)');
+    sunGrad.addColorStop(0.6,'rgba(249,115,22,.22)');
+    sunGrad.addColorStop(1,'rgba(250,204,21,.25)');
+    ctx.fillStyle=sunGrad;
+    ctx.fillRect(0,0,AW,AH);
+  }else if(curWeather==='night'){
+    ctx.fillStyle='rgba(10,16,34,.56)';
+    ctx.fillRect(0,0,AW,AH);
+    // Quầng sáng đèn quanh nhân vật và các tòa nhà chính
+    ctx.save();
+    ctx.globalCompositeOperation='lighter';
+    var pGlow=ctx.createRadialGradient(P.x,P.y-4,2,P.x,P.y-4,34);
+    pGlow.addColorStop(0,'rgba(253,224,71,.45)');
+    pGlow.addColorStop(1,'rgba(253,224,71,0)');
+    ctx.fillStyle=pGlow;
+    ctx.beginPath();ctx.arc(P.x,P.y-4,34,0,6.2832);ctx.fill();
+
+    PLACES.forEach(function(pl){
+      var cx=(pl.bb.x0+pl.bb.x1)/2,cy=(pl.bb.y0+pl.bb.y1)/2;
+      ctx.fillStyle='rgba(254,240,138,.22)';
+      ctx.beginPath();ctx.arc(cx,cy,14,0,6.2832);ctx.fill();
+    });
+    ctx.restore();
+  }else if(curWeather==='rain'){
+    ctx.fillStyle='rgba(30,41,59,.22)';
+    ctx.fillRect(0,0,AW,AH);
+    ctx.strokeStyle='rgba(186,230,253,.65)';
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    for(var ri=0;ri<raindrops.length;ri++){
+      var rd=raindrops[ri];
+      rd.y+=rd.spd*dt;
+      rd.x-=rd.spd*0.22*dt;
+      if(rd.y>AH){rd.y=-5;rd.x=Math.random()*AW;}
+      if(rd.x<0)rd.x=AW;
+      ctx.moveTo(rd.x,rd.y);
+      ctx.lineTo(rd.x-2,rd.y+rd.len);
+    }
+    ctx.stroke();
+  }
+
+  // 8. Vẽ Pháo hoa chiến thắng (nếu có)
+  if(fireworkTimer>0){
+    fireworkTimer-=dt;
+    if(Math.random()<0.18){
+      spawnFirework(80+Math.random()*(AW-160),50+Math.random()*(AH-140));
+    }
+  }
+  for(var f=fireworks.length-1;f>=0;f--){
+    var fw=fireworks[f];
+    fw.x+=fw.vx*dt;
+    fw.y+=fw.vy*dt;
+    fw.vy+=28*dt;
+    fw.life-=dt;
+    if(fw.life<=0){fireworks.splice(f,1);continue;}
+    ctx.fillStyle=fw.col;
+    ctx.fillRect(Math.round(fw.x),Math.round(fw.y),2,2);
+  }
+
+  // 9. Vẽ hiệu ứng chữ nổi (Floating XP / Status Text)
+  for(var ft=floatTexts.length-1;ft>=0;ft--){
+    var item=floatTexts[ft];
+    item.y+=item.vy*dt;
+    item.life-=dt;
+    if(item.life<=0){floatTexts.splice(ft,1);continue;}
+    ctx.save();
+    ctx.font='700 9px "Be Vietnam Pro", sans-serif';
+    ctx.textAlign='center';
+    ctx.globalAlpha=Math.min(1,item.life/0.5);
+    ctx.fillStyle='#141b17';
+    ctx.fillText(item.text,Math.round(item.x)+1,Math.round(item.y)+1);
+    ctx.fillStyle=item.color;
+    ctx.fillText(item.text,Math.round(item.x),Math.round(item.y));
+    ctx.restore();
+  }
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
