@@ -1,0 +1,1277 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#ffd9a0">
+<title>Khám Phá NTU</title>
+<!-- Three.js (bản ES module) nạp qua CDN bằng importmap. Mọi thứ khác (hình khối, âm thanh) đều dựng bằng code. -->
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+<style>
+/* ===== Giao diện: tông màu ấm, ưu tiên màn hình dọc của điện thoại ===== */
+:root{--cream:#fff3dc;--paper:#fffaf0;--ink:#4a2f1b;--muted:#8a6a4f;--acc:#d9622b;--acc2:#b84a1c;--green:#4f9a5a;--gold:#f2b84b;--line:#ecd8b8;--sh:0 6px 18px rgba(80,40,10,.25);
+ --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);--safe-l:env(safe-area-inset-left,0px);--safe-r:env(safe-area-inset-right,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#ffe2b8;color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;touch-action:none;-webkit-user-select:none;user-select:none;overscroll-behavior:none}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+.glass{background:rgba(255,250,240,.92);border:2px solid #fff;box-shadow:var(--sh);backdrop-filter:blur(4px)}
+
+/* --- Màn chào --- */
+#splash{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;background:linear-gradient(#ffbf80 0%,#ffdca8 42%,#fff3dc 100%);overflow:hidden}
+#splash .sun{position:absolute;top:8%;right:12%;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,#fff3b0 0 35%,#ffd36b 36% 60%,rgba(255,211,107,0) 72%);}
+#splash .hill{position:absolute;left:-10%;right:-10%;bottom:-8%;height:34%;background:#b7d385;border-radius:50% 50% 0 0/100% 100% 0 0}
+#splash .hill.h2{bottom:-14%;height:30%;background:#9cc46f;left:20%;right:-30%}
+#splash>*:not(.sun):not(.hill){position:relative;z-index:2}
+#splash h1{margin:0;font-size:clamp(40px,12vw,72px);line-height:1.02;font-weight:900;color:#a8431a;text-shadow:0 3px 0 #fff3dc,0 8px 18px rgba(120,50,10,.3);letter-spacing:-.5px}
+#splash h1 small{display:block;font-size:.34em;letter-spacing:.35em;color:#c9703a;font-weight:700;text-shadow:none;margin-bottom:6px}
+#splash p{margin:0;max-width:30em;color:#6b4a30;font-size:15px;line-height:1.5}
+#nameBox{display:flex;flex-direction:column;gap:6px;align-items:stretch;width:min(320px,86vw);margin-top:6px}
+#nameBox label{font-size:13px;font-weight:700;color:#8a5a36;text-align:left}
+#nameIn{height:50px;border-radius:14px;border:2px solid #f0c58f;background:#fffaf0;padding:0 16px;font-size:18px;color:var(--ink);outline:none;-webkit-user-select:text;user-select:text;text-align:center}
+#nameIn:focus{border-color:var(--acc)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 24px;border-radius:26px;background:var(--acc);color:#fff;font-weight:800;font-size:18px;box-shadow:0 5px 0 var(--acc2),var(--sh);transition:transform .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--acc2)}
+.btn[disabled]{opacity:.6}
+.btn.ghost{background:#fffaf0;color:var(--acc2);box-shadow:0 4px 0 #ecd8b8,var(--sh);border:2px solid #f0c58f}
+.btn.small{min-height:40px;padding:0 16px;font-size:15px}
+#goBtn{width:min(320px,86vw);font-size:22px;min-height:60px;margin-top:6px}
+#splash .fine{font-size:12px;color:#8a6a4f;opacity:.9;margin-top:4px}
+#loadMsg{font-size:13px;color:#8a6a4f;min-height:18px}
+
+/* --- HUD --- */
+#hud{position:fixed;inset:0;z-index:10;pointer-events:none}
+#hud>*{pointer-events:auto}
+#stats{position:absolute;left:calc(10px + var(--safe-l));top:calc(10px + var(--safe-t));display:flex;flex-direction:column;gap:6px;align-items:flex-start;pointer-events:none}
+.chip{padding:5px 11px;border-radius:16px;font-weight:800;font-size:13px;white-space:nowrap}
+.chip b{color:var(--acc2)}
+#quest{position:absolute;left:calc(10px + var(--safe-l));top:calc(84px + var(--safe-t));display:flex;flex-direction:column;gap:8px}
+.q{width:46px;height:46px;border-radius:50%;font-size:22px;position:relative;display:grid;place-items:center}
+.q.on{outline:3px solid var(--gold);outline-offset:1px}
+.q.done::after{content:'✓';position:absolute;right:-3px;bottom:-3px;background:var(--green);color:#fff;border-radius:50%;width:19px;height:19px;font-size:12px;font-weight:900;display:grid;place-items:center}
+#tr{position:absolute;right:calc(10px + var(--safe-r));top:calc(10px + var(--safe-t));display:flex;gap:7px}
+#tr button{width:44px;height:44px;border-radius:50%;font-size:20px;display:grid;place-items:center}
+#mini{position:absolute;right:calc(10px + var(--safe-r));top:calc(62px + var(--safe-t));width:132px;height:92px;border-radius:14px;border:2px solid #fff;box-shadow:var(--sh);background:rgba(255,250,240,.6)}
+#joy{position:absolute;left:calc(22px + var(--safe-l));bottom:calc(26px + var(--safe-b));width:132px;height:132px;border-radius:50%;background:rgba(255,250,240,.38);border:3px solid rgba(255,255,255,.75);touch-action:none;box-shadow:inset 0 0 18px rgba(120,60,20,.15)}
+#knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(255,250,240,.92);border:3px solid #fff;box-shadow:var(--sh)}
+#act{position:absolute;right:calc(18px + var(--safe-r));bottom:calc(34px + var(--safe-b));min-width:168px;max-width:62vw;min-height:68px;padding:8px 22px;border-radius:34px;background:var(--acc);color:#fff;font-weight:900;font-size:19px;line-height:1.15;box-shadow:0 6px 0 var(--acc2),var(--sh);animation:pulse 1.4s infinite;display:flex;flex-direction:column;align-items:center;justify-content:center}
+#act small{font-size:12px;font-weight:700;opacity:.9}
+#act:active{transform:translateY(3px)}
+@keyframes pulse{50%{transform:scale(1.045)}}
+#arrow{position:absolute;left:50%;top:50%;width:70px;height:70px;margin:-35px 0 0 -35px;display:flex;flex-direction:column;align-items:center;pointer-events:none!important;text-shadow:0 2px 6px rgba(80,30,0,.5)}
+#arrow i{font-style:normal;font-size:34px;color:#fff;display:block;line-height:38px;filter:drop-shadow(0 2px 3px rgba(80,30,0,.6))}
+#arrow b{font-size:13px;color:#fff;background:rgba(150,60,20,.8);padding:1px 8px;border-radius:10px}
+#toast{position:absolute;left:50%;top:calc(66px + var(--safe-t));transform:translateX(-50%);max-width:86vw;pointer-events:none!important;display:flex;flex-direction:column;gap:6px;align-items:center}
+.toast{padding:8px 16px;border-radius:18px;font-weight:800;font-size:14px;text-align:center;animation:tin .25s ease-out;background:rgba(74,47,27,.92);color:#fff3dc}
+@keyframes tin{from{opacity:0;transform:translateY(-8px)}}
+#runbar{position:absolute;left:50%;top:calc(66px + var(--safe-t));transform:translateX(-50%);padding:8px 14px;border-radius:20px;font-weight:800;display:flex;gap:10px;align-items:center;font-size:15px;white-space:nowrap}
+#runbar button{background:#f3d7b3;border-radius:14px;padding:4px 12px;font-weight:800;font-size:13px}
+
+/* --- Nhãn trên đầu & bong bóng chữ --- */
+#labels,#bubbles{position:fixed;inset:0;pointer-events:none;z-index:5;overflow:hidden}
+.lbl{position:absolute;left:0;top:0;transform:translate(-50%,-50%);padding:1px 7px;border-radius:9px;font-size:12px;font-weight:800;color:#6b2d10;background:rgba(255,248,232,.88);white-space:nowrap;box-shadow:0 1px 4px rgba(80,30,0,.25);will-change:transform}
+.lbl.big{font-size:13px;background:rgba(255,236,196,.95)}
+.bub{position:absolute;left:0;top:0;max-width:170px;padding:6px 10px;border-radius:14px;background:#fffdf6;color:#4a2f1b;font-size:12.5px;font-weight:700;line-height:1.3;text-align:center;box-shadow:0 3px 10px rgba(80,30,0,.28);transition:opacity .25s;will-change:transform}
+.bub::after{content:'';position:absolute;left:50%;bottom:-6px;margin-left:-6px;border:6px solid transparent;border-top-color:#fffdf6;border-bottom:0}
+#nameTag{position:absolute;left:0;top:0;padding:1px 9px;border-radius:10px;font-size:12px;font-weight:900;color:#fff;background:rgba(217,98,43,.92);white-space:nowrap;will-change:transform}
+
+/* --- Hộp thoại (trò chơi nhỏ, sổ, chia sẻ) --- */
+#modal{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:calc(14px + var(--safe-t)) calc(14px + var(--safe-r)) calc(14px + var(--safe-b)) calc(14px + var(--safe-l));background:rgba(70,35,10,.45);touch-action:pan-y}
+#mbox{position:relative;width:min(460px,100%);max-height:100%;overflow:auto;background:var(--paper);border-radius:22px;padding:20px 18px 18px;box-shadow:0 14px 40px rgba(60,25,0,.45);border:3px solid #fff;-webkit-user-select:text;user-select:text}
+#mclose{position:absolute;right:10px;top:10px;width:36px;height:36px;border-radius:50%;background:#f6e2c4;font-size:16px;font-weight:900;z-index:2}
+#mbody h2{margin:0 0 4px;font-size:21px;color:var(--acc2);padding-right:34px}
+#mbody p{margin:6px 0;line-height:1.5;font-size:15px}
+#mbody .muted{color:var(--muted);font-size:13px}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.card{background:#fff;border:2px solid var(--line);border-radius:16px;padding:12px 14px}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;padding:12px 14px;border-radius:14px;background:#fff;border:2px solid var(--line);font-size:16px;font-weight:700}
+.opt:active{background:#fff0d6}
+.opt.ok{background:#dff3dc;border-color:#7cc47a}.opt.no{background:#fde0d8;border-color:#e59a86}
+.bigname{font-size:30px;font-weight:900;text-align:center;padding:22px 8px;border-radius:18px;background:#fff;border:2px dashed #e8c590;min-height:90px;color:#7a3a14;display:flex;align-items:center;justify-content:center;word-break:break-word}
+.dots{display:flex;gap:6px;justify-content:center;margin:10px 0}.dots i{width:10px;height:10px;border-radius:50%;background:#ecd8b8}.dots i.on{background:var(--acc)}
+textarea{width:100%;min-height:110px;border-radius:14px;border:2px solid #f0c58f;background:#fffdf6;padding:12px;font:inherit;font-size:16px;color:var(--ink);resize:none;outline:none;-webkit-user-select:text;user-select:text}
+textarea:focus{border-color:var(--acc)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chips button{padding:6px 11px;border-radius:14px;background:#fff0d6;border:1px solid #f0c58f;font-size:13px;font-weight:700}
+.cnt{text-align:right;font-size:12px;color:var(--muted)}
+.tube{width:150px;height:190px;margin:6px auto;position:relative;touch-action:none}
+.tube svg{width:100%;height:100%;overflow:visible}
+.shaking .tube svg{animation:shake .18s infinite}
+@keyframes shake{0%{transform:rotate(-9deg) translateX(-4px)}50%{transform:rotate(9deg) translateX(4px)}100%{transform:rotate(-9deg) translateX(-4px)}}
+.bar{height:14px;border-radius:8px;background:#f1dfc2;overflow:hidden;margin:8px 0}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#f2b84b,#d9622b);transition:width .1s}
+.stick{margin:10px auto;width:min(250px,80%);padding:16px 14px 14px;border-radius:12px;background:linear-gradient(#fff6dc,#f6e0b0);border:3px solid #c98b4a;box-shadow:var(--sh);text-align:center;animation:drop .8s cubic-bezier(.3,1.4,.5,1)}
+@keyframes drop{from{transform:translateY(-120px) rotate(-25deg);opacity:0}}
+.stick .no{font-size:13px;font-weight:900;color:#a8431a;letter-spacing:.12em}
+.stick .tx{font-size:18px;font-weight:800;line-height:1.4;margin:8px 0;color:#5a2d10}
+.stick .en{font-size:12px;color:#8a6a4f;font-weight:700}
+.stat3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.stat3 div{background:#fff;border:2px solid var(--line);border-radius:12px;text-align:center;padding:8px 2px;font-size:12px;color:var(--muted);font-weight:700}
+.stat3 b{display:block;font-size:20px;color:var(--acc2)}
+.entry{background:#fff;border:2px solid var(--line);border-radius:14px;padding:10px 12px;margin:8px 0;font-size:14px;line-height:1.45}
+.entry small{display:block;color:var(--muted);margin-top:4px}
+.entry button{margin-top:6px;padding:4px 12px;border-radius:12px;background:#fff0d6;border:1px solid #f0c58f;font-size:13px;font-weight:700}
+#mbody h3{margin:14px 0 2px;font-size:15px;color:#7a3a14}
+#mbody img.share{width:100%;max-height:58vh;object-fit:contain;border-radius:14px;display:block;margin:8px auto;box-shadow:var(--sh)}
+.pass{font-size:48px;text-align:center}
+
+/* --- Hướng dẫn 3 bước --- */
+#tut{position:fixed;inset:0;z-index:45;background:rgba(70,35,10,.5);display:flex;align-items:flex-end;justify-content:center;padding:16px calc(16px + var(--safe-r)) calc(24px + var(--safe-b)) calc(16px + var(--safe-l))}
+#tutBox{width:min(440px,100%);background:var(--paper);border-radius:22px;padding:18px;box-shadow:0 14px 40px rgba(60,25,0,.45);border:3px solid #fff;text-align:center}
+#tutBox .ic{font-size:44px}#tutBox h2{margin:4px 0;color:var(--acc2);font-size:21px}#tutBox p{margin:4px 0 8px;line-height:1.5}
+@media (min-width:700px){#joy{display:none}#act{min-height:64px}}
+@media (max-height:520px){#quest{top:calc(70px + var(--safe-t))}.q{width:38px;height:38px;font-size:18px}#mini{width:110px;height:76px}}
+</style>
+</head>
+<body>
+<canvas id="c" tabindex="0" aria-label="Khuôn viên 3D"></canvas>
+<div id="labels"></div><div id="bubbles"></div><div id="nameTag" hidden></div>
+
+<!-- Màn chào: hiện ngay, không chờ tải 3D -->
+<div id="splash">
+  <div class="sun"></div><div class="hill"></div><div class="hill h2"></div>
+  <h1><small>KHUÔN VIÊN 3D</small>Khám Phá<br>NTU</h1>
+  <p>Dạo quanh khuôn viên, điểm danh, đi học, chạy bộ, viết lời cầu qua môn và xin một quẻ học hành nhẹ nhàng.</p>
+  <div id="nameBox"><label for="nameIn">Tên của bạn</label><input id="nameIn" maxlength="20" placeholder="Ví dụ: Kiên" autocomplete="off" enterkeyhint="go"></div>
+  <button class="btn" id="goBtn" disabled>Đang tải khuôn viên…</button>
+  <div id="loadMsg"></div>
+  <div class="fine">Không đăng nhập · không thu thập dữ liệu · không quảng cáo. Âm thanh bật khi bạn vào trường.</div>
+</div>
+
+<div id="hud" hidden>
+  <div id="stats"><span class="chip glass">Tâm an <b id="cScore">0</b></span><span class="chip glass">Cao nhất <b id="cBest">0</b></span></div>
+  <div id="quest">
+    <button class="q glass" data-t="att" aria-label="Điểm danh">✅</button>
+    <button class="q glass" data-t="cls" aria-label="Đi học">📚</button>
+    <button class="q glass" data-t="run" aria-label="Chạy thể dục">🏃</button>
+    <button class="q glass" data-t="pray" aria-label="Viết lời cầu">🎀</button>
+    <button class="q glass" data-t="que" aria-label="Xin quẻ">🎋</button>
+  </div>
+  <div id="tr">
+    <button class="glass" id="bMute" aria-label="Bật tắt tiếng">🔊</button>
+    <button class="glass" id="bBook" aria-label="Sổ cầu an của tôi">📖</button>
+    <button class="glass" id="bShare" aria-label="Chia sẻ">📤</button>
+    <button class="glass" id="bHelp" aria-label="Hướng dẫn">?</button>
+  </div>
+  <canvas id="mini" width="264" height="184"></canvas>
+  <div id="joy"><div id="knob"></div></div>
+  <button id="act" hidden></button>
+  <div id="arrow" hidden><i>➤</i><b></b></div>
+  <div id="toast"></div>
+  <div id="runbar" class="glass" hidden><span id="runTxt"></span><button id="runStop">Dừng</button></div>
+</div>
+
+<div id="modal" hidden><div id="mbox"><button id="mclose" aria-label="Đóng">✕</button><div id="mbody"></div></div></div>
+<div id="tut" hidden><div id="tutBox"><div class="ic" id="tutIc"></div><h2 id="tutH"></h2><p id="tutP"></p><div class="dots" id="tutDots"></div><div class="row"><button class="btn ghost small" id="tutSkip">Bỏ qua</button><button class="btn small" id="tutNext">Tiếp</button></div></div></div>
+
+<script type="module">
+/* =====================================================================
+   KHÁM PHÁ NTU: game 3D khuôn viên (một file duy nhất)
+   Các phần: 1 Tiện ích & lưu trữ · 2 Dữ liệu khuôn viên · 3 Khởi tạo 3D ·
+   4 Dựng thế giới · 5 Nhân vật & va chạm · 6 Khách AI · 7 Âm thanh ·
+   8 Giao diện & trò chơi nhỏ · 9 Chia sẻ ảnh · 10 Vòng lặp chính
+   ===================================================================== */
+import * as THREE from 'three';
+
+/* ========== 1. TIỆN ÍCH & LƯU TRỮ ========== */
+const $=s=>document.querySelector(s);
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const lerp=(a,b,t)=>a+(b-a)*t;
+const TAU=Math.PI*2;
+const IS_TOUCH=matchMedia('(pointer:coarse)').matches||('ontouchstart' in window);
+const LOW=IS_TOUCH||(navigator.hardwareConcurrency||8)<=4;   // máy yếu/điện thoại: giảm tải
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const RND=mulberry(20261104);                                   // ngẫu nhiên cố định cho cảnh (cây, hoa)
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const angDiff=(a,b)=>{let d=(b-a)%TAU;if(d>Math.PI)d-=TAU;if(d<-Math.PI)d+=TAU;return d};
+function fatal(msg){const m=$('#loadMsg');if(m)m.textContent=msg;const b=$('#goBtn');if(b){b.textContent='Không chạy được';b.disabled=true}}
+
+// Dữ liệu lưu trên máy (localStorage): tên, số lần điểm danh, điểm Tâm an cao nhất, lời cầu, quẻ.
+const KEY='kham-pha-ntu-v1';
+let save={name:'',checkins:0,classes:0,runs:0,best:0,prayers:[],draws:[],seenTut:false,muted:false};
+try{
+  const r=JSON.parse(localStorage.getItem(KEY)||'null');
+  if(r&&typeof r==='object'){
+    save.name=String(r.name||'').slice(0,20);
+    ['checkins','classes','runs','best'].forEach(k=>save[k]=Math.max(0,+r[k]||0));
+    save.prayers=(Array.isArray(r.prayers)?r.prayers:[]).slice(-100).map(p=>({text:String(p.text||'').slice(0,120),ts:+p.ts||0}));
+    save.draws=(Array.isArray(r.draws)?r.draws:[]).slice(-100).map(p=>({n:+p.n||1,text:String(p.text||'').slice(0,200),ts:+p.ts||0}));
+    save.seenTut=!!r.seenTut;save.muted=!!r.muted;
+  }
+}catch(e){}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(save))}catch(e){}}
+let SCORE=0;   // điểm Tâm an của lượt chơi này; điểm cao nhất được lưu
+
+/* ========== 2. DỮ LIỆU KHUÔN VIÊN (dựng theo sơ đồ) ========== */
+// Tọa độ gốc là pixel của sơ đồ (rộng 1500). 10 pixel = 1 đơn vị thế giới; X sang phải, Z xuống dưới (Nam).
+const S=10,WX=px=>(px-750)/S,WZ=py=>(py-650)/S;
+const cvt=a=>a.map(p=>[WX(p[0]),WZ(p[1])]);
+const CAMPUS=cvt([[125,345],[255,440],[360,480],[455,530],[700,385],[1000,240],[1090,200],[1110,232],[1190,266],[1300,296],[1385,338],[1420,395],[1405,430],[1355,520],[1360,550],[1440,605],[1478,650],[1480,720],[1462,800],[1457,940],[1300,1010],[1100,1085],[900,1135],[805,1150],[400,1015],[60,905],[18,880],[12,780],[14,620],[35,500],[70,410]]);
+const OUTER=[
+ [[118,318],[250,425],[330,462],[440,505],[1095,180],[1300,122],[1495,66]],
+ [[0,905],[300,1005],[580,1105],[800,1175]],
+ [[545,1250],[800,1185],[1090,1135],[1300,1045],[1500,935]],
+ [[580,1105],[612,1160],[592,1215],[545,1250]],
+ [[545,1250],[430,1295]]].map(cvt);
+const INNER=[
+ [[495,590],[560,572],[640,555],[730,538]],[[730,538],[850,522],[957,518],[1060,516],[1145,520]],
+ [[1145,520],[1280,555],[1350,605],[1425,670],[1445,760],[1436,930]],[[1148,520],[1148,740]],
+ [[750,752],[1000,745],[1250,740],[1385,752]],[[730,538],[725,640],[735,800]],[[957,518],[962,640],[975,800]],
+ [[665,812],[900,805],[1100,800],[1310,792]],[[957,518],[920,440],[885,350]],[[957,518],[1040,440],[1100,380]],
+ [[1100,375],[1160,405],[1285,425]],[[1100,375],[1070,320],[1110,235]],[[1195,430],[1170,520]],
+ [[520,590],[600,640],[655,700],[675,780],[690,880],[710,945],[790,982]],
+ [[155,520],[300,565],[350,610],[357,720],[350,870],[310,935],[330,962],[500,962],[700,962],[790,982]],
+ [[240,430],[205,520]],[[150,800],[260,880],[350,945]],[[1100,968],[1290,968],[1335,925],[1325,860],[1340,800]],[[1330,852],[1385,853]]].map(cvt);
+// Biển nằm phía Đông Nam, ngoài đường Phạm Văn Đồng (kéo dài ra xa để thấy tới chân trời)
+const SEA_POLY=cvt([[545,1285],[700,1250],[900,1215],[1090,1155],[1300,1065],[1500,950],[2600,317],[2600,2600],[545,2600]]);
+const SEA_EDGE=cvt([[545,1285],[700,1250],[900,1215],[1090,1155],[1300,1065],[1500,950],[1900,720]]);
+
+// Loại công trình: màu tường, màu mái, kiểu mái (flat = mái bằng, hip = mái 4 phía), chiều cao tầng
+const TYPE={
+ G:{wall:'#f6e7cf',roof:'#a8586d',style:'flat'}, K:{wall:'#fae29a',roof:'#d9843b',style:'hip'},
+ A:{wall:'#f3dcc0',roof:'#c0553a',style:'hip'},  B:{wall:'#f0d5b4',roof:'#b0472f',style:'hip'},
+ H:{wall:'#f6d3d8',roof:'#c25a8a',style:'hip',fh:4.2}, X:{wall:'#f1dfc4',roof:'#c5624a',style:'hip'},
+ C:{wall:'#f3e6cc',roof:'#3fa7b5',style:'hip'}, M:{wall:'#f8e6c8',roof:'#8e2f16',style:'hip'},
+ L:{wall:'#f2d9b0',roof:'#b0472f',style:'hip'}, T:{wall:'#f3d9b6',roof:'#a33b1d',style:'flat'},
+ F:{wall:'#f2e0bf',roof:'#d08a3a',style:'hip'}};
+// [mã, nhãn, loại, các khối (pixel sơ đồ), số tầng, tùy chọn]
+const BLD=[
+['a3','A-3','A',[[522,490,572,528]],3],['a4','A-4','A',[[548,528,600,562]],3],
+['ht3','HT-3','H',[[65,430,170,468],[65,468,102,520]],2],
+['a5','A-5','A',[[88,650,325,712],[105,580,142,650],[188,580,225,650],[275,598,310,650]],2],
+['k7','K-7','K',[[45,723,112,770],[75,770,150,805],[28,790,75,840]],4],
+['g7','G-7','G',[[205,785,300,825],[260,760,300,790],[295,805,345,850]],3],
+['g6','G-6','G',[[345,875,400,912],[380,900,460,935],[430,918,495,952]],3],
+['g5','G-5','G',[[517,906,630,938]],2],['g4','G-4','G',[[578,995,697,1030]],2],
+['ht1','HT-1','H',[[737,1007,812,1040]],2],
+['main','Tòa nhà chính','M',[[700,835,925,872]],4],
+['a2','A-2','A',[[890,872,925,935],[890,935,1090,975]],3],
+['b3','B-3','B',[[1085,815,1145,862],[1065,862,1105,938]],4],
+['g3','G-3','G',[[1145,878,1320,915]],3],['k6','K-6','K',[[1385,808,1428,862]],5],
+['g1','G-1','G',[[1195,482,1320,540]],3],['g2','G-2','G',[[1280,602,1335,650],[1265,650,1372,718]],3],
+['a7','A-7','C',[[1160,598,1268,697]],3],['a6','A-6','C',[[775,623,825,670]],2],
+['g8','G-8','G',[[600,563,725,595]],2],['b1','B-1','B',[[662,672,725,700]],2],
+['a8','A-8','A',[[695,705,728,798]],3],
+['canteen','Nhà ăn','F',[[690,395,780,420],[735,368,782,395]],2],
+['k8','K-8','K',[[838,255,912,300],[800,285,880,330],[780,320,850,358]],4],
+['k1','K-1','K',[[908,305,975,370]],5],['k2','K-2','K',[[815,368,880,398]],5],
+['k3','K-3','K',[[782,425,898,455]],5],['k4','K-4','K',[[782,473,898,503]],5],
+['k5','K-5','K',[[655,420,688,475],[585,475,718,508]],5],
+['x3','X-3','X',[[920,375,1000,415],[990,385,1065,432]],3],['x1','X-1','C',[[1075,415,1130,450],[1105,450,1170,487]],2],
+['tv2','TV-2','L',[[1100,268,1160,320],[1085,315,1125,355]],4],
+['tv3','TV-3','L',[[1150,350,1230,410],[1200,293,1310,345]],3],
+['tv4','TV-4','L',[[1270,345,1312,402]],3,{round:[1312,353,27]}],
+['n1',null,'T',[[105,845,193,922]],3],['n2',null,'C',[[830,1005,963,1043]],2]];
+// Các cổng: hai trụ mỗi cổng
+const GATES=[['Cổng chính',[[487,580,504,612],[528,538,546,574]]],['Cổng phụ',[[212,432,228,452],[250,442,266,462]]],['Cổng phụ',[[1410,925,1424,943],[1444,925,1458,943]]]];
+// Khu vực đặt riêng (theo thế giới): sân bóng, nhà thi đấu, hồ sen, sân nhỏ
+const PITCH={x0:WX(985),x1:WX(1135),z0:WZ(543),z1:WZ(722)};
+const GYM={x0:WX(830),x1:WX(950),z0:WZ(575),z1:WZ(740)};
+const POND=[[960,845,1008,905],[975,905,995,935]].map(r=>({x0:WX(r[0]),x1:WX(r[2]),z0:WZ(r[1]),z1:WZ(r[3])}));
+const MINICOURT={x0:WX(405),x1:WX(520),z0:WZ(668),z1:WZ(755)};
+// Nhà truyền thống + cây đa + gian xin quẻ: bên cạnh Tòa nhà chính
+const HOUSE={cx:-13.8,cz:21,w:8,d:5.5};
+const BANYAN={x:-23,z:21.5};
+const KIOSK={x:-13.8,z:25.4};
+const BLDG_BY_ID={};
+
+// Câu hỏi buổi học (nhẹ nhàng, kiến thức phổ thông)
+const QUIZ=[
+['Từ "library" trong tiếng Anh nghĩa là gì?',['Thư viện','Nhà ăn','Sân bóng'],0,'Library = thư viện, nơi mượn và đọc sách.'],
+['Dãy số 2, 4, 8, 16, … số tiếp theo là?',['24','32','30'],1,'Mỗi số gấp đôi số trước, nên 16 × 2 = 32.'],
+['HTML là viết tắt của cụm nào?',['HyperText Markup Language','High Tech Modern Link','Home Tool Make Language'],0,'HTML = HyperText Markup Language, ngôn ngữ đánh dấu của trang web.'],
+['Một byte gồm bao nhiêu bit?',['4','8','16'],1,'1 byte = 8 bit.'],
+['"Deadline" nghĩa là gì?',['Hạn chót','Điểm cộng','Giờ ra chơi'],0,'Deadline là hạn nộp cuối cùng.'],
+['Chọn từ đúng: "She ___ to school every day."',['go','goes','going'],1,'Chủ ngữ ngôi thứ ba số ít (she) nên động từ thêm -es: goes.'],
+['Nước tinh khiết sôi ở bao nhiêu độ C (áp suất khí quyển chuẩn)?',['90','100','120'],1,'Ở áp suất chuẩn, nước sôi ở 100 °C.'],
+['7 × 8 bằng bao nhiêu?',['54','56','64'],1,'7 × 8 = 56.'],
+['Trong Excel, hàm nào dùng để tính tổng?',['SUM','COUNT','MAX'],0,'SUM cộng các ô lại với nhau.'],
+['Số nguyên tố nhỏ nhất là số nào?',['1','2','3'],1,'2 là số nguyên tố nhỏ nhất (1 không phải số nguyên tố).'],
+['"Scholarship" nghĩa là gì?',['Học bổng','Bài kiểm tra','Phòng học'],0,'Scholarship = học bổng.'],
+['Ngôn ngữ nào dùng để tạo kiểu (màu sắc, bố cục) cho trang web?',['CSS','SQL','Python'],0,'CSS quy định giao diện, màu sắc, bố cục của trang web.'],
+['Đơn vị đo tần số là gì?',['Hertz (Hz)','Watt (W)','Newton (N)'],0,'Tần số đo bằng Hertz (Hz).'],
+['"Practice makes perfect" gần nghĩa nhất với câu nào?',['Có công mài sắt, có ngày nên kim','Nước đến chân mới nhảy','Chậm như rùa'],0,'Luyện tập đều đặn sẽ giỏi lên, giống "có công mài sắt có ngày nên kim".']];
+
+// 40 câu chúc trong quẻ học hành (mang tính giải trí)
+const QUE=[
+'Việc học hôm nay nhẹ như gió, chăm một chút là thấy tiến bộ.','Từng trang sách nhỏ rồi sẽ thành con đường lớn.','Bình tĩnh bước vào phòng thi, kiến thức sẽ tự tìm đến bạn.','Hôm nay có một tin vui nhỏ đang chờ ở cuối buổi học.',
+'Bạn đã cố gắng nhiều hơn bạn nghĩ. Hãy tự khen mình một câu.','Gặp bạn tốt, học nhóm vui, bài khó cũng hóa dễ.','Chậm mà chắc, đường xa cũng tới.','Một giấc ngủ ngon là món quà cho kỳ thi sắp tới.',
+'Điều bạn đang lo lắng sẽ nhẹ đi khi bạn bắt đầu làm.','Thầy cô và bạn bè luôn sẵn lòng giúp khi bạn cần.','Hôm nay hợp để học điều mới, hãy mạnh dạn hỏi một câu.','Mỗi lần thử lại là một lần giỏi lên.',
+'Tâm an thì trí sáng, trí sáng thì bài làm trôi chảy.','Điểm số chỉ là một phần, bạn còn nhiều điều đáng quý hơn thế.','Có công mài sắt có ngày nên kim, bạn đang mài rất tốt.','Gió biển mang đến cho bạn một ý tưởng hay.',
+'Cuối kỳ rồi sẽ là một cái thở phào thật nhẹ nhõm.','Đừng so với ai, hãy so với chính mình của hôm qua.','Một ly nước mát, một hơi thở sâu, rồi làm tiếp nhé.','Hôm nay bạn sẽ hiểu bài nhanh hơn thường lệ.',
+'Kiên nhẫn là chiếc chìa khóa mở cánh cửa khó nhất.','Hãy tin rằng bạn đang đi đúng hướng.','Bài khó nào rồi cũng có lời giải, chỉ cần bạn chưa bỏ cuộc.','Một nụ cười hôm nay sẽ làm cả lớp vui hơn.',
+'Thành quả sẽ đến vào lúc bạn ít ngờ tới nhất.','Bạn mang trong mình nhiều tiềm năng hơn bạn tưởng.','Học đều mỗi ngày một chút, kỳ thi sẽ nhẹ như không.','Điều tốt đang trên đường đến với bạn.',
+'Nghỉ ngơi cũng là một cách học thông minh.','Bạn không đơn độc, ai cũng từng lo lắng như bạn.','Tập trung từng bước, đừng nhìn cả quãng đường.','May mắn thích người chăm chỉ, và bạn đang rất chăm.',
+'Hôm nay làm xong một việc nhỏ, ngày mai sẽ nhẹ hơn.','Câu hỏi hay là nửa câu trả lời, cứ hỏi nhé.','Bình yên trong lòng là điểm cộng lớn nhất.','Ánh nắng sau cơn mưa luôn đẹp hơn bạn nghĩ.',
+'Việc học là chuyến đi dài, hôm nay bạn đã đi thêm một đoạn.','Hãy dịu dàng với bản thân khi thấy mệt.','Một ý tưởng mới đang nảy mầm, hãy ghi lại nhé.','Chúc bạn học hành thuận lợi, thi cử suôn sẻ, lòng luôn an.'];
+const PRAYER_IDEAS=['Cầu cho em qua môn Giải tích','Mong kỳ thi này suôn sẻ','Cầu cho cả nhóm cùng qua môn','Mong ba mẹ luôn khỏe, con học tốt','Xin cho con bình tĩnh khi làm bài'];
+
+// Lời thoại bong bóng của khách AI (không bao giờ gán cho người chơi)
+const SAY={
+ any:['Dạo này học hành căng thẳng quá','Hôm nay có điểm danh không nhỉ?','Cầu qua môn!','Deadline ơi là deadline','Đi ăn nhà ăn thôi!','Thư viện hôm nay đông quá','Gió biển mát ghê','Mong kỳ này suôn sẻ','Sắp thi rồi, hồi hộp quá','Cà phê một ly rồi vào lớp','Chiều nay đá bóng không?','Nhớ mang thẻ sinh viên nha','Hôm nay trời đẹp thật','Ôn bài xong đi dạo biển nhé','Môn này khó nhưng cố lên!','Xin quẻ thử xem sao','Trễ giờ mất rồi!','Ai đi thư viện với mình không?','Học nhóm không?','Cố lên, sắp nghỉ rồi!'],
+ run:['Chạy thêm một vòng nữa!','Thở đều nào…','Mồ hôi là điểm cộng!','Chạy xong đi ăn gì đây?'],
+ pray:['Cầu qua môn!','Xin cho con qua môn Giải tích','Mong kỳ thi suôn sẻ','Cầu cho cả nhóm cùng qua môn','Thi tốt nhé, cố lên!']};
+
+/* ========== 3. KHỞI TẠO 3D ========== */
+const cv=$('#c');
+let renderer;
+try{renderer=new THREE.WebGLRenderer({canvas:cv,antialias:!LOW,powerPreference:'high-performance'});}
+catch(e){fatal('Thiết bị này không hỗ trợ WebGL. Hãy thử trình duyệt khác.');throw e}
+let PR=Math.min(window.devicePixelRatio||1,2);          // giới hạn pixel ratio tối đa 2
+renderer.setPixelRatio(PR);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
+const scene=new THREE.Scene();
+scene.fog=new THREE.Fog(0xffe6c0,90,280);
+const camera=new THREE.PerspectiveCamera(55,1,.5,900);
+scene.add(new THREE.HemisphereLight(0xfff1d6,0xb59f78,1.55));
+const sun=new THREE.DirectionalLight(0xffe7bd,2.5);      // bóng đổ đơn giản: một ánh nắng, vùng bóng bám theo người chơi
+sun.castShadow=true;sun.shadow.mapSize.set(LOW?1024:2048,LOW?1024:2048);
+{const c=sun.shadow.camera,H=34;c.left=-H;c.right=H;c.top=H;c.bottom=-H;c.near=1;c.far=150;sun.shadow.bias=-.0007;sun.shadow.normalBias=.05}
+scene.add(sun,sun.target);
+// Bầu trời: mái vòm chuyển màu từ xanh nhạt sang vàng ấm ở chân trời
+const sky=(()=>{const g=new THREE.SphereGeometry(600,18,10),pos=g.attributes.position,col=[],top=new THREE.Color('#79c3e6'),hor=new THREE.Color('#ffe9c4'),t=new THREE.Color();
+ for(let i=0;i<pos.count;i++){const k=clamp(pos.getY(i)/600,0,1);t.copy(hor).lerp(top,Math.pow(k,.7));col.push(t.r,t.g,t.b)}
+ g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+ const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide,fog:false,depthWrite:false}));m.renderOrder=-1;return m})();
+scene.add(sky);
+
+/* ---------- Gom khối tĩnh thành ít draw call ---------- */
+const shade=(h,f)=>new THREE.Color(h).multiplyScalar(1+f);
+const _m=new THREE.Matrix4(),_q=new THREE.Quaternion(),_e=new THREE.Euler(),_p=new THREE.Vector3(),_s=new THREE.Vector3();
+function M(x,y,z,sx=1,sy=1,sz=1,ry=0,rx=0,rz=0){_e.set(rx,ry,rz);_q.setFromEuler(_e);return _m.compose(_p.set(x,y,z),_q,_s.set(sx,sy,sz)).clone()}
+function hipM(x,y,z,sx,sy,sz){return new THREE.Matrix4().makeTranslation(x,y,z).multiply(new THREE.Matrix4().makeScale(sx,sy,sz)).multiply(new THREE.Matrix4().makeRotationY(Math.PI/4))}
+const UNIT_BOX=new THREE.BoxGeometry(1,1,1),CONE4=new THREE.ConeGeometry(1,1,4,1);
+class Batch{
+  constructor(){this.p=[];this.n=[];this.c=[];this.u=[];this.i=[];this.v=0}
+  add(geo,m,color,uvf){
+    const P=geo.attributes.position,N=geo.attributes.normal,U=geo.attributes.uv,I=geo.index;
+    const nm=new THREE.Matrix3().getNormalMatrix(m),c=new THREE.Color(color),v=new THREE.Vector3();
+    for(let k=0;k<P.count;k++){
+      v.fromBufferAttribute(P,k).applyMatrix4(m);this.p.push(v.x,v.y,v.z);
+      v.fromBufferAttribute(N,k).applyMatrix3(nm).normalize();this.n.push(v.x,v.y,v.z);
+      this.c.push(c.r,c.g,c.b);let u=U.getX(k),w=U.getY(k);if(uvf){const t=uvf(u,w,k);u=t[0];w=t[1]}this.u.push(u,w);
+    }
+    if(I)for(let k=0;k<I.count;k++)this.i.push(I.getX(k)+this.v);else for(let k=0;k<P.count;k++)this.i.push(k+this.v);
+    this.v+=P.count;
+  }
+  box(x,y,z,w,h,d,color,ry=0){this.add(UNIT_BOX,M(x,y,z,w,h,d,ry),color)}
+  // Tường có cửa sổ: lặp họa tiết theo kích thước thật (Tu mét/ô ngang, Tv mét/tầng)
+  wall(x,y,z,w,h,d,color,Tu,Tv){
+    this.add(UNIT_BOX,M(x,y,z,w,h,d),color,(u,v,k)=>{const f=k>>2;
+      if(f<2)return[u*d/Tu,v*h/Tv];if(f<4)return[u*w/Tu,v*d/Tu];return[u*w/Tu,v*h/Tv]});
+  }
+  mesh(mat,cast=true,recv=true){
+    const g=new THREE.BufferGeometry();
+    g.setAttribute('position',new THREE.Float32BufferAttribute(this.p,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(this.n,3));
+    g.setAttribute('color',new THREE.Float32BufferAttribute(this.c,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(this.u,2));
+    g.setIndex(new THREE.Uint32BufferAttribute(this.i,1));g.computeBoundingSphere();
+    const m=new THREE.Mesh(g,mat);m.castShadow=cast;m.receiveShadow=recv;return m;
+  }
+}
+function canvasTex(w,h,draw,repeat){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;if(repeat){t.wrapS=t.wrapT=THREE.RepeatWrapping}return t}
+
+/* ========== 4. DỰNG THẾ GIỚI ========== */
+const facade=canvasTex(128,128,(g)=>{                       // họa tiết tường: cửa sổ + gờ tầng
+  g.fillStyle='#fff';g.fillRect(0,0,128,128);g.fillStyle='#e9dfcf';g.fillRect(0,116,128,12);
+  g.fillStyle='#fff';g.fillRect(30,22,68,78);g.fillStyle='#7f9bb0';g.fillRect(35,27,58,68);g.fillStyle='#a6c0d1';g.fillRect(35,27,58,26);
+  g.fillStyle='#fff';g.fillRect(62,27,4,68);g.fillRect(35,58,58,4);g.fillStyle='#d6c8b2';g.fillRect(26,100,76,6);
+},true);
+const matWall=new THREE.MeshLambertMaterial({vertexColors:true,map:facade});
+const matFlat=new THREE.MeshLambertMaterial({vertexColors:true});
+const matGlow=new THREE.MeshBasicMaterial({vertexColors:true});
+const wallB=new Batch(),plainB=new Batch(),groundB=new Batch(),glowB=new Batch(),gymRoofB=new Batch();
+const colliders=[],circles=[],LABELS=[],navExtra=[];
+const addCollider=(x0,z0,x1,z1,h=3)=>colliders.push({x0,x1,z0,z1,h});
+const rectW=r=>{const x0=WX(r[0]),x1=WX(r[2]),z0=WZ(r[1]),z1=WZ(r[3]);return{x0,x1,z0,z1,cx:(x0+x1)/2,cz:(z0+z1)/2,w:Math.max(.4,x1-x0),d:Math.max(.4,z1-z0)}};
+function inPoly(x,z,P=CAMPUS){let ins=false;for(let i=0,j=P.length-1;i<P.length;j=i++){const a=P[i],b=P[j];if((a[1]>z)!==(b[1]>z)&&x<(b[0]-a[0])*(z-a[1])/(b[1]-a[1])+a[0])ins=!ins}return ins}
+function inCampus(x,z,m=.5){return inPoly(x,z)&&inPoly(x+m,z)&&inPoly(x-m,z)&&inPoly(x,z+m)&&inPoly(x,z-m)}
+function segDist(px,pz,a,b){const dx=b[0]-a[0],dz=b[1]-a[1],L=dx*dx+dz*dz;let t=L?((px-a[0])*dx+(pz-a[1])*dz)/L:0;t=clamp(t,0,1);return Math.hypot(px-(a[0]+dx*t),pz-(a[1]+dz*t))}
+const SEGS=[];INNER.forEach(l=>{for(let i=0;i<l.length-1;i++)SEGS.push([l[i],l[i+1]])});
+const pathDist=(x,z)=>{let d=1e9;for(const s of SEGS){const k=segDist(x,z,s[0],s[1]);if(k<d)d=k}return d};
+
+/* ---------- Mặt đất, đường, biển ---------- */
+function polyMesh(P,y,color,mat){const sh=new THREE.Shape(P.map(p=>new THREE.Vector2(p[0],-p[1])));const g=new THREE.ShapeGeometry(sh);g.rotateX(-Math.PI/2);g.translate(0,y,0);
+  const m=new THREE.Mesh(g,mat||new THREE.MeshLambertMaterial({color}));m.receiveShadow=true;return m}
+{
+  const land=new THREE.Mesh(new THREE.PlaneGeometry(1400,1400).rotateX(-Math.PI/2),new THREE.MeshLambertMaterial({color:'#e2d29f'}));land.receiveShadow=true;scene.add(land);
+  scene.add(polyMesh(CAMPUS,.02,'#a9cc78'));
+  const waveT=canvasTex(128,128,(g,w,h)=>{g.fillStyle='#8fd6e6';g.fillRect(0,0,w,h);g.strokeStyle='rgba(255,255,255,.65)';g.lineWidth=3;g.lineCap='round';
+    for(let i=0;i<7;i++){const x=(i*37)%110+8,y=(i*53)%110+10;g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(x+12,y-6,x+26,y);g.stroke()}},true);
+  waveT.repeat.set(1/10,1/10);
+  const sea=polyMesh(SEA_POLY,.05,'#fff',new THREE.MeshLambertMaterial({map:waveT,color:'#ffffff'}));scene.add(sea);window.__sea=waveT;
+}
+function ribbon(B,pts,width,y,h,color,edge){
+  for(let i=0;i<pts.length-1;i++){const[a,b]=[pts[i],pts[i+1]],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz);if(L<.01)continue;
+    B.add(UNIT_BOX,M((a[0]+b[0])/2,y,(a[1]+b[1])/2,L,h,width,Math.atan2(-dz,dx)),color)}
+  const cyl=new THREE.CylinderGeometry(width/2,width/2,h,10);pts.forEach(p=>B.add(cyl,M(p[0],y,p[1]),color));
+}
+OUTER.forEach(l=>{ribbon(groundB,l,4.6,.04,.06,'#a79d90');});
+INNER.forEach(l=>{ribbon(groundB,l,2.7,.06,.06,'#d5bf92');});
+INNER.forEach(l=>{ribbon(groundB,l,2.1,.08,.06,'#ecdcb6');});
+ribbon(groundB,SEA_EDGE.slice(2),7,.045,.05,'#eed9a4');                // dải cát ven biển
+
+/* ---------- Công trình ---------- */
+const FLAGPOLE=[];
+function buildBlock(T,r,floors){
+  const fh=T.fh||3,h=floors*fh;
+  wallB.wall(r.cx,h/2,r.cz,r.w,h,r.d,T.wall,3,fh);
+  plainB.box(r.cx,.3,r.cz,r.w+.12,.6,r.d+.12,shade(T.wall,-.22));
+  if(T.style==='flat'){plainB.box(r.cx,h+.2,r.cz,r.w+.5,.4,r.d+.5,T.roof);if(r.w>5&&r.d>3)plainB.box(r.cx-r.w*.2,h+.8,r.cz,1.4,.8,1.2,'#cfc6b8')}
+  else{plainB.box(r.cx,h+.12,r.cz,r.w+.8,.24,r.d+.8,shade(T.roof,-.3));
+    const rh=clamp(Math.min(r.w,r.d)*.45,1.1,3.8);plainB.add(CONE4,hipM(r.cx,h+.24+rh/2,r.cz,(r.w+.8)*.7071,rh,(r.d+.8)*.7071),T.roof)}
+  addCollider(r.x0,r.z0,r.x1,r.z1,h+1.2);
+  return h;
+}
+function doorFor(T,r){                                         // cửa chính + mái hiên ở mặt Nam
+  if(r.w<3.2)return;
+  plainB.box(r.cx,1,r.cz+r.d/2+.06,1.6,2,.22,'#6b3a1e');plainB.box(r.cx,2.4,r.cz+r.d/2+.7,3,.2,1.5,T.roof);
+  plainB.box(r.cx-1.35,1.2,r.cz+r.d/2+1.3,.16,2.4,.16,'#7a4a2a');plainB.box(r.cx+1.35,1.2,r.cz+r.d/2+1.3,.16,2.4,.16,'#7a4a2a');
+}
+const ENTRY={};
+for(const[id,label,tp,parts,floors,opt]of BLD){
+  const T=TYPE[tp],rs=parts.map(rectW);let main=rs[0],topH=0;
+  rs.forEach(r=>{if(r.w*r.d>main.w*main.d)main=r;topH=Math.max(topH,buildBlock(T,r,floors))});
+  if(opt&&opt.round){                                          // tòa tròn của thư viện
+    const[cx,cy,rr]=opt.round,x=WX(cx),z=WZ(cy),rad=rr/S,h=floors*3;
+    wallB.add(new THREE.CylinderGeometry(rad,rad,h,20,1),M(x,h/2,z),T.wall,(u,v)=>[u*TAU*rad/3,v*floors]);
+    plainB.add(new THREE.ConeGeometry(rad+.5,2.6,20),M(x,h+1.3,z),'#9a3a24');circles.push({x,z,r:rad+.1});
+  }
+  if(!id.startsWith('n'))doorFor(T,main);
+  if(id==='main'){                                              // tháp chính giữa có cờ
+    const th=topH+3.5;wallB.wall(main.cx,th/2,main.cz,3.6,th,3,'#f3dcb2',3,3);plainB.add(CONE4,hipM(main.cx,th+1.1,main.cz,3.9*.7071*1.1,2.2,3.4*.7071*1.1),'#7a2410');
+    plainB.box(main.cx,th+3,main.cz,.12,2.4,.12,'#6b6b6b');plainB.box(main.cx+.6,th+3.8,main.cz,1.1,.7,.06,'#d2331c');plainB.box(main.cx+.6,th+3.8,main.cz+.04,.3,.3,.06,'#ffd23a');
+    addCollider(main.cx-1.8,main.cz-1.5,main.cx+1.8,main.cz+1.5,th);
+  }
+  ENTRY[id]=[main.cx,main.z1+1.8];BLDG_BY_ID[id]=main;
+  if(label)LABELS.push({t:label,x:main.cx,y:topH+(TYPE[tp].style==='hip'?3.6:2.2),z:main.cz,big:id==='main'});
+}
+function buildGate(name,parts,idx){
+  const[a,b]=parts.map(rectW);
+  [a,b].forEach(r=>{plainB.box(r.cx,2.2,r.cz,1.1,4.4,1.1,'#cfa26a');plainB.box(r.cx,4.55,r.cz,1.5,.3,1.5,'#a8431a');addCollider(r.cx-.55,r.cz-.55,r.cx+.55,r.cz+.55,4.4)});
+  const dx=b.cx-a.cx,dz=b.cz-a.cz,L=Math.hypot(dx,dz),ry=Math.atan2(-dz,dx),mx=(a.cx+b.cx)/2,mz=(a.cz+b.cz)/2;
+  plainB.box(mx,4.3,mz,L,.75,.55,'#b53a1c',ry);plainB.box(mx,4.85,mz,L*.92,.3,.9,'#d9843b',ry);
+  LABELS.push({t:name,x:mx,y:6.4,z:mz,big:idx===0});
+  if(idx===0){                                                   // bảng tên cổng chính
+    const tex=canvasTex(512,96,(g,w,h)=>{g.fillStyle='#b53a1c';g.fillRect(0,0,w,h);g.strokeStyle='#ffd88a';g.lineWidth=5;g.strokeRect(6,6,w-12,h-12);g.fillStyle='#fff3d0';g.font='bold 46px system-ui,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('ĐẠI HỌC NHA TRANG',w/2,h/2+2)});
+    const geo=new THREE.PlaneGeometry(Math.min(L*.9,5.2),.98);
+    for(const s of[1,-1]){const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({map:tex}));m.position.set(mx,5.35,mz);m.rotation.y=ry+(s>0?0:Math.PI);m.translateZ(.31*s*(s>0?1:-1)*(s>0?1:1));scene.add(m)}
+  }
+}
+GATES.forEach((g,i)=>buildGate(g[0],g[1],i));
+
+/* ---------- Nhà thi đấu (trong nhà): có sàn, 4 bức tường, cửa ở phía Đông; mái ẩn đi khi bạn bước vào ---------- */
+const GYM_DOOR={z0:(GYM.z0+GYM.z1)/2-1.7,z1:(GYM.z0+GYM.z1)/2+1.7};
+function buildGym(){
+  const{x0,x1,z0,z1}=GYM,t=.5,H=5.5,wc='#ebcb93',cx=(x0+x1)/2,cz=(z0+z1)/2;
+  const wall=(a,b,c,d)=>{plainB.box((a+c)/2,H/2,(b+d)/2,c-a,H,d-b,wc);addCollider(a,b,c,d,H)};
+  wall(x0,z0,x1,z0+t);wall(x0,z1-t,x1,z1);wall(x0,z0,x0+t,z1);                       // Bắc, Nam, Tây
+  wall(x1-t,z0,x1,GYM_DOOR.z0);wall(x1-t,GYM_DOOR.z1,x1,z1);                         // Đông, chừa cửa
+  plainB.box(x1-t/2,H-.7,(GYM_DOOR.z0+GYM_DOOR.z1)/2,t,1.4,3.4,'#b53a1c');                // xà cửa
+  plainB.box(cx,.04,cz,x1-x0-t*2,.08,z1-z0-t*2,'#dcae6c');                              // sàn gỗ
+  const line=(x,z,w,d)=>plainB.box(x,.1,z,w,.03,d,'#fff6e0');
+  line(cx,cz,.12,z1-z0-3);line(cx,z0+1.6,x1-x0-3,.12);line(cx,z1-1.6,x1-x0-3,.12);line(x0+1.6,cz,.12,z1-z0-3);line(x1-1.6,cz,.12,z1-z0-3);
+  const ring=new THREE.RingGeometry(1.5,1.62,24).rotateX(-Math.PI/2);plainB.add(ring,M(cx,.11,cz),'#fff6e0');
+  for(const zz of[z0+1.2,z1-1.2]){plainB.box(cx,1.7,zz,.12,3.4,.12,'#555');plainB.box(cx,3.2,zz+(zz<cz?.3:-.3),1.5,1,.08,'#fffdf4');
+    plainB.add(new THREE.TorusGeometry(.32,.04,6,12).rotateX(Math.PI/2),M(cx,2.9,zz+(zz<cz?.65:-.65)),'#e2582c')}
+  [[x0+2,z0+2.5],[x1-3,z1-3]].forEach(p=>plainB.add(new THREE.SphereGeometry(.28,8,6),M(p[0],.3,p[1]),'#e8782e'));
+  // Mái vòm bậc thang (mái ẩn khi người chơi ở trong nhà)
+  const W=x1-x0+.8,L=z1-z0+.8,steps=7;
+  for(let i=0;i<steps;i++){const a0=i/steps*Math.PI,a1=(i+1)/steps*Math.PI,hh=3.6,ww=W/2;const xa=Math.cos(a0)*ww,ya=Math.sin(a0)*hh,xb=Math.cos(a1)*ww,yb=Math.sin(a1)*hh;
+    const mx=(xa+xb)/2,my=(ya+yb)/2,len=Math.hypot(xb-xa,yb-ya),ang=Math.atan2(yb-ya,xb-xa);
+    gymRoofB.add(UNIT_BOX,M(cx+mx,H+my+.1,cz,len+.15,.35,L,0,0,ang),i%2?'#c9552f':'#d96b3a')}
+  [z0-.3,z1+.3].forEach(zz=>{for(let i=0;i<5;i++){const f=1-i/5;gymRoofB.add(UNIT_BOX,M(cx,H+.3+i*.7,zz,W*f,.7,.3),'#e6c48a')}});
+  navExtra.push({x0:x0-.5,x1:x1+.5,z0:z0-.5,z1:z1+.5});
+  LABELS.push({t:'Nhà thi đấu',x:cx,y:H+4.8,z:cz,big:true});
+}
+buildGym();
+
+/* ---------- Sân bóng đá (đi bộ lên được), sân nhỏ, hồ sen ---------- */
+function buildPitch(){
+  const{x0,x1,z0,z1}=PITCH,cx=(x0+x1)/2,cz=(z0+z1)/2,w=x1-x0,d=z1-z0;
+  for(let i=0;i<6;i++)groundB.box(cx,.1,z0+d*(i+.5)/6,w,.04,d/6,i%2?'#7cbd57':'#6fb04e');
+  const L=(x,z,ww,dd)=>groundB.box(x,.13,z,ww,.03,dd,'#f7fff0');
+  L(cx,z0+.7,w-1.4,.14);L(cx,z1-.7,w-1.4,.14);L(x0+.7,cz,.14,d-1.4);L(x1-.7,cz,.14,d-1.4);L(cx,cz,w-1.4,.14);
+  groundB.add(new THREE.RingGeometry(2.1,2.24,28).rotateX(-Math.PI/2),M(cx,.14,cz),'#f7fff0');
+  for(const zz of[z0+.25,z1-.25]){plainB.box(cx-1.5,.9,zz,.1,1.8,.1,'#fff');plainB.box(cx+1.5,.9,zz,.1,1.8,.1,'#fff');plainB.box(cx,1.8,zz,3.1,.1,.1,'#fff')}
+  LABELS.push({t:'Sân bóng đá',x:cx,y:3.2,z:cz,big:true});
+}
+buildPitch();
+{
+  const c=MINICOURT,cx=(c.x0+c.x1)/2,cz=(c.z0+c.z1)/2;groundB.box(cx,.1,cz,c.x1-c.x0,.04,c.z1-c.z0,'#79b88a');
+  groundB.box(cx,.13,cz,c.x1-c.x0-1,.03,.12,'#f3fff0');groundB.box(cx,.13,c.z0+.6,c.x1-c.x0-1,.03,.12,'#f3fff0');groundB.box(cx,.13,c.z1-.6,c.x1-c.x0-1,.03,.12,'#f3fff0');
+  POND.forEach(r=>{const w=r.x1-r.x0,d=r.z1-r.z0,cx2=(r.x0+r.x1)/2,cz2=(r.z0+r.z1)/2;
+    plainB.box(cx2,.15,cz2,w+.7,.3,d+.7,'#a89a84');plainB.box(cx2,.2,cz2,w,.3,d,'#5cc1d0');addCollider(r.x0-.3,r.z0-.3,r.x1+.3,r.z1+.3,.4);
+    for(let i=0;i<Math.floor(w*d/4);i++){const px=r.x0+.6+RND()*(w-1.2),pz=r.z0+.6+RND()*(d-1.2);plainB.add(new THREE.CylinderGeometry(.38,.38,.04,8),M(px,.36,pz),'#4f9a5a');if(i%3==0)plainB.add(new THREE.SphereGeometry(.12,6,4),M(px,.42,pz),'#f7a9c6')}});
+  const r=POND[0];LABELS.push({t:'Hồ sen',x:(r.x0+r.x1)/2,y:2.2,z:(r.z0+r.z1)/2,big:false});
+}
+
+/* ---------- Nhà truyền thống, cây đa, gian xin quẻ ---------- */
+const RIB_SLOTS=[];
+function buildHouse(){
+  const{cx,cz,w,d}=HOUSE;
+  plainB.box(cx,.3,cz,w+.8,.6,d+.8,'#b9aa94');
+  for(const xi of[-w/2+.4,-w/6,w/6,w/2-.4])for(const zi of[-d/2+.4,d/2-.4])plainB.box(cx+xi,2.1,cz+zi,.34,3,.34,'#7a2e1d');
+  plainB.box(cx,2.1,cz-d/2+.5,w-.5,3,.22,'#f1dcb8');plainB.box(cx-w/2+.5,2.1,cz,.22,3,d-.6,'#f1dcb8');plainB.box(cx+w/2-.5,2.1,cz,.22,3,d-.6,'#f1dcb8');
+  plainB.box(cx,1.1,cz-.3,2.2,.9,.9,'#8a3a1c');plainB.box(cx,1.75,cz-.3,.9,.45,.5,'#d9a441');plainB.add(new THREE.CylinderGeometry(.5,.5,.8,10),M(cx+2.4,1,cz+.2),'#a8321c');  // bàn thờ, trống
+  plainB.box(cx,3.7,cz,w+2.6,.22,d+2.6,'#6e2a18');
+  plainB.add(CONE4,hipM(cx,3.82+.75,cz,(w+2.6)*.7071,1.5,(d+2.6)*.7071),'#a8402a');
+  plainB.box(cx,5.7,cz,w-3,.9,d-2.4,'#f1dcb8');plainB.box(cx,6.22,cz,w-2.6,.2,d-2,'#6e2a18');
+  plainB.add(CONE4,hipM(cx,6.32+.65,cz,(w-2.6)*.7071,1.3,(d-2)*.7071),'#a8402a');plainB.box(cx,7.8,cz,.16,.6,.16,'#e0a53a');
+  addCollider(cx-w/2-.4,cz-d/2-.4,cx+w/2+.4,cz+d/2+.4,6);
+  LABELS.push({t:'Nhà truyền thống',x:cx,y:8.6,z:cz,big:true});
+}
+function buildBanyan(){
+  const{x,z}=BANYAN,leaf=['#4f8a3a','#5f9c45','#3f7a35','#6aa84c'];
+  plainB.add(new THREE.CylinderGeometry(.8,1.2,3.8,9),M(x,1.9,z),'#7a5434');
+  for(let i=0;i<6;i++){const a=i*TAU/6+.3;plainB.add(new THREE.ConeGeometry(.45,1.2,5),M(x+Math.cos(a)*1.05,.6,z+Math.sin(a)*1.05,1,1,1,0,0,0),'#7a5434')}
+  const branchGeo=new THREE.CylinderGeometry(.14,.26,1,6);
+  for(let k=0;k<6;k++){const a=k*TAU/6+.15,len=4.2;
+    plainB.add(branchGeo,new THREE.Matrix4().makeTranslation(x+Math.cos(a)*len/2,3.7,z+Math.sin(a)*len/2).multiply(new THREE.Matrix4().makeRotationY(-a)).multiply(new THREE.Matrix4().makeRotationZ(Math.PI/2)).multiply(new THREE.Matrix4().makeScale(1,len,1)),'#7a5434');
+    for(const rr of[2.2,3.5])RIB_SLOTS.push({x:x+Math.cos(a)*rr,y:3.55,z:z+Math.sin(a)*rr,a});}
+  const ico=new THREE.IcosahedronGeometry(1,1);
+  for(let i=0;i<11;i++){const a=i*TAU/11*1.7,r=i<2?0:2+RND()*1.6,rad=2.1+RND()*1.0;plainB.add(ico,M(x+Math.cos(a)*r,5.3+RND()*1.4,z+Math.sin(a)*r,rad,rad*.8,rad),leaf[i%4])}
+  for(let i=0;i<14;i++){const a=RND()*TAU,r=1.8+RND()*2.8,h=3.8+RND()*.8;plainB.add(new THREE.CylinderGeometry(.04,.07,h,4),M(x+Math.cos(a)*r,h/2,z+Math.sin(a)*r),'#8a6440')}  // rễ phụ
+  circles.push({x,z,r:1.35});
+  LABELS.push({t:'Cây đa',x,y:8.6,z,big:true});
+}
+function buildKiosk(){
+  const{x,z}=KIOSK;
+  plainB.box(x,.8,z,1.9,.14,1,'#8a4b24');for(const sx of[-.8,.8])for(const sz of[-.38,.38])plainB.box(x+sx,.4,z+sz,.12,.8,.12,'#6b3a1e');
+  plainB.add(new THREE.CylinderGeometry(.3,.25,.85,10),M(x,1.33,z),'#c98b4a');plainB.add(new THREE.TorusGeometry(.3,.04,5,10).rotateX(Math.PI/2),M(x,1.76,z),'#8a4b24');
+  for(let i=0;i<8;i++)plainB.add(UNIT_BOX,M(x+(i-3.5)*.06,2.05,z,.035,.75,.035,0,0,(i-3.5)*.05),'#f2d79a');
+  for(const sx of[-1.05,1.05])plainB.box(x+sx,1.3,z-.55,.13,2.6,.13,'#7a2e1d');
+  plainB.box(x,2.62,z-.1,2.8,.16,1.8,'#b53a1c');plainB.add(CONE4,hipM(x,2.7+.35,z-.1,2.5*.7071,.7,1.5*.7071),'#c0553a');
+  addCollider(x-1.05,z-.55,x+1.05,z+.55,2.6);
+  LABELS.push({t:'Xin quẻ',x,y:4.2,z,big:true});
+}
+buildHouse();buildBanyan();buildKiosk();
+{ // Bảng điểm danh trước Tòa nhà chính
+  plainB.box(5.2,.8,18,.14,1.6,.14,'#6b3a1e');plainB.box(6.8,.8,18,.14,1.6,.14,'#6b3a1e');plainB.box(6,1.45,18,1.9,.95,.12,'#fff6e0');plainB.box(6,1.9,18,2.1,.14,.2,'#d9622b');
+  for(let i=0;i<3;i++)plainB.box(5.4+i*.55,1.4,18.08,.4,.08,.02,'#7a8a9a');
+}
+
+/* ---------- Điểm hoạt động (hotspot) ---------- */
+function blockedAt(x,z,r){
+  for(const c of colliders){const px=clamp(x,c.x0,c.x1),pz=clamp(z,c.z0,c.z1);if(Math.hypot(x-px,z-pz)<r)return true}
+  for(const c of circles)if(Math.hypot(x-c.x,z-c.z)<c.r+r)return true;
+  return false;
+}
+function findFree(x,z,r=.8){
+  if(!blockedAt(x,z,r)&&inCampus(x,z,.8))return[x,z];
+  for(let rad=.5;rad<8;rad+=.5)for(let k=0;k<16;k++){const a=k*TAU/16,px=x+Math.cos(a)*rad,pz=z+Math.sin(a)*rad;if(!blockedAt(px,pz,r)&&inCampus(px,pz,.8))return[px,pz]}
+  return[x,z];
+}
+const HOT=[];
+const HOT_INFO={att:{icon:'✅',color:0x3fb27f,verb:'Điểm danh'},cls:{icon:'📚',color:0x4a8fd9,verb:'Vào lớp học'},run:{icon:'🏃',color:0xf08a2b,verb:'Chạy thể dục'},pray:{icon:'🎀',color:0xd8412f,verb:'Viết lời cầu'},que:{icon:'🎋',color:0x9a62d0,verb:'Xin quẻ'}};
+function addHot(type,x,z,name){
+  const f=findFree(x,z),inf=HOT_INFO[type],col=new THREE.Color(inf.color);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(.85,1.2,28).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.85,depthWrite:false}));ring.position.set(f[0],.16,f[1]);
+  const beam=new THREE.Mesh(new THREE.CylinderGeometry(.6,.6,7,14,1,true),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.16,depthWrite:false,side:THREE.DoubleSide}));beam.position.set(f[0],3.5,f[1]);
+  const gem=new THREE.Mesh(new THREE.OctahedronGeometry(.34),new THREE.MeshBasicMaterial({color:col}));gem.position.set(f[0],2.5,f[1]);
+  scene.add(ring,beam,gem);HOT.push({type,x:f[0],z:f[1],name,ring,beam,gem,done:false});
+}
+addHot('att',6,17.2,'Bảng điểm danh');
+for(const id of['g1','g2','g3','g4','g5','g6','g7','g8']){const e=ENTRY[id];addHot('cls',e[0],e[1],'Giảng đường G-'+id.slice(1))}
+addHot('run',(PITCH.x0+PITCH.x1)/2,(PITCH.z0+PITCH.z1)/2,'Sân bóng đá');
+addHot('pray',BANYAN.x+2.2,BANYAN.z+2.8,'Cây đa');
+addHot('que',KIOSK.x,KIOSK.z+1.9,'Gian xin quẻ');
+
+/* ---------- Cây, hàng rào, đèn, ghế, hoa ---------- */
+function addTree(x,z,kind,s){
+  const leaf=['#4f9a4a','#5aa650','#3f8a43','#79ad4e'][Math.floor(RND()*4)];
+  if(kind==='palm'){                                           // dừa: đặc trưng Nha Trang
+    const lean=(RND()-.5)*.5,H=4.6*s;
+    for(let i=0;i<3;i++){const t=(i+.5)/3;plainB.add(new THREE.CylinderGeometry(.2*s*(1-t*.3),.26*s*(1-t*.2),H/3,6),M(x+lean*t*H*.4,H/3*(i+.5),z,1,1,1,0,0,-lean*.3),'#9a7650')}
+    const top=[x+lean*H*.4,H,z];
+    for(let k=0;k<7;k++){const a=k*TAU/7;plainB.add(FROND,new THREE.Matrix4().makeTranslation(top[0],top[1],top[2]).multiply(new THREE.Matrix4().makeRotationY(a)).multiply(new THREE.Matrix4().makeRotationZ(-(Math.PI/2-.45))).multiply(new THREE.Matrix4().makeScale(s,s,s)),k%2?'#5fa04a':'#4a9040')}
+    plainB.add(new THREE.SphereGeometry(.22*s,6,4),M(top[0],top[1]-.2,top[2]),'#7a5a2a');circles.push({x,z,r:.4});
+  }else if(kind==='cone'){
+    plainB.add(new THREE.CylinderGeometry(.2*s,.26*s,1.2*s,6),M(x,.6*s,z),'#7a5434');
+    plainB.add(new THREE.ConeGeometry(1.3*s,2.2*s,7),M(x,2.1*s,z),'#3f8a55');plainB.add(new THREE.ConeGeometry(.95*s,1.8*s,7),M(x,3.1*s,z),'#4a9a5c');circles.push({x,z,r:.45});
+  }else{
+    plainB.add(new THREE.CylinderGeometry(.2*s,.3*s,1.8*s,6),M(x,.9*s,z),'#7a5434');
+    plainB.add(new THREE.IcosahedronGeometry(1.35*s,1),M(x,2.7*s,z,1,.9,1),leaf);plainB.add(new THREE.IcosahedronGeometry(.9*s,1),M(x+.6*s,3.5*s,z-.3*s),shade(leaf,.1));circles.push({x,z,r:.5});
+  }
+}
+const FROND=new THREE.ConeGeometry(.32,2.8,4).scale(1,1,.3).translate(0,1.4,0);
+{ // gieo cây theo cụm, tránh nhà, đường, điểm hoạt động
+  const CL=[[150,540,70,25,6],[210,735,90,35,9],[470,805,105,55,18],[290,925,50,25,5],[385,968,35,25,4],[510,1010,30,25,3],[745,1085,60,40,8],[905,1095,85,35,9],[1040,1040,50,30,5],[1230,985,90,25,8],[1115,1005,40,25,4],
+    [1025,260,55,50,8],[1285,445,40,30,5],[1370,415,35,15,4],[595,630,45,90,9],[610,760,15,75,5],[1030,765,280,12,14],[1350,890,15,45,4],[440,610,40,30,6],[1400,600,25,60,6],[880,630,18,60,5],[1180,760,60,12,6],[560,690,40,40,5],[850,820,60,15,5]];
+  CL.forEach(c=>{let placed=0,tries=0;while(placed<c[4]&&tries<160){tries++;
+    const a=RND()*TAU,rr=Math.sqrt(RND()),x=WX(c[0]+Math.cos(a)*rr*c[2]),z=WZ(c[1]+Math.sin(a)*rr*c[3]);
+    if(!inCampus(x,z,1.8)||blockedAt(x,z,1.8)||pathDist(x,z)<2.6)continue;
+    if(HOT.some(h=>Math.hypot(h.x-x,h.z-z)<3.2))continue;
+    if(x>PITCH.x0-1&&x<PITCH.x1+1&&z>PITCH.z0-1&&z<PITCH.z1+1)continue;
+    if(x>GYM.x0-1&&x<GYM.x1+1&&z>GYM.z0-1&&z<GYM.z1+1)continue;
+    if(x>MINICOURT.x0-1&&x<MINICOURT.x1+1&&z>MINICOURT.z0-1&&z<MINICOURT.z1+1)continue;
+    if(x>-30&&x<-8&&z>15&&z<30)continue;
+    const east=x>40||z>35,u=RND();addTree(x,z,east&&u<.6?'palm':u<.25?'cone':'round',.85+RND()*.5);placed++}});
+}
+{ // Tường rào thấp quanh khuôn viên
+  const P=CAMPUS;
+  for(let i=0;i<P.length;i++){const a=P[i],b=P[(i+1)%P.length],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz);
+    plainB.box((a[0]+b[0])/2,.45,(a[1]+b[1])/2,L,.9,.5,'#e1c08c',Math.atan2(-dz,dx));plainB.box((a[0]+b[0])/2,.95,(a[1]+b[1])/2,L,.14,.7,'#b5774a',Math.atan2(-dz,dx));
+    for(let t=0;t<L;t+=6){const k=t/L;plainB.box(a[0]+dx*k,.6,a[1]+dz*k,.7,1.2,.7,'#c99a63')}}
+}
+{ // Đèn đường, ghế đá, hoa
+  const post=new THREE.CylinderGeometry(.07,.09,3,6),bulb=new THREE.SphereGeometry(.22,8,6);let n=0;
+  const place=(x,z)=>{if(!inCampus(x,z,1)||blockedAt(x,z,.7)||pathDist(x,z)<1.0)return false;return true};
+  INNER.forEach((l,li)=>{for(let i=0;i<l.length-1;i++){const a=l[i],b=l[i+1],dx=b[0]-a[0],dz=b[1]-a[1],L=Math.hypot(dx,dz),nx=-dz/L,nz=dx/L;
+    for(let t=4;t<L-2;t+=14){const k=t/L,side=((n++)%2?1:-1),x=a[0]+dx*k+nx*1.8*side,z=a[1]+dz*k+nz*1.8*side;
+      if(!place(x,z))continue;plainB.add(post,M(x,1.5,z),'#4a4a4a');glowB.add(bulb,M(x,3.1,z),'#ffe9a0');
+      if(n%4===0){const rot=Math.atan2(-dz,dx);plainB.box(x+nx*1.2*side,.45,z+nz*1.2*side,1.6,.12,.5,'#8a4b24',rot);plainB.box(x+nx*1.45*side,.85,z+nz*1.45*side,1.6,.45,.1,'#8a4b24',rot);
+        plainB.box(x+nx*1.2*side,.22,z+nz*1.2*side,1.4,.44,.14,'#5a5a5a',rot)}}}});
+  const fl=['#f27ca3','#ffd23a','#ffffff','#ff7a3a','#c58cf0'];
+  const patch=(cx,cz,r,c)=>{for(let i=0;i<c;i++){const a=RND()*TAU,d=Math.sqrt(RND())*r,x=cx+Math.cos(a)*d,z=cz+Math.sin(a)*d;if(blockedAt(x,z,.3)||!inCampus(x,z,.5)||pathDist(x,z)<1.2)continue;
+    plainB.box(x,.18,z,.25,.36,.25,'#4a9a4a');plainB.add(new THREE.SphereGeometry(.2,5,4),M(x,.42,z),fl[Math.floor(RND()*5)])}};
+  patch(-9,28,3,26);patch(-2,14,3,18);patch(BANYAN.x+4,BANYAN.z+5,3,22);patch(HOUSE.cx-1,HOUSE.cz+4.2,3,18);patch(4,-8,4,18);patch(60,-10,4,16);patch(20,20,3,14);
+}
+/* Núi xa: dải đồi mờ phía Tây Bắc (hướng ngược biển) */
+{const b=new Batch();for(let i=0;i<9;i++){const a=Math.PI*(1.05+i*.11),r=330+(i%3)*30,h=50+((i*37)%40);b.add(new THREE.ConeGeometry(70+(i%4)*14,h,7),M(Math.cos(a)*r,h/2-2,Math.sin(a)*r),i%2?'#9db98a':'#a8c297')}
+ const m=b.mesh(new THREE.MeshLambertMaterial({vertexColors:true}),false,false);m.frustumCulled=false;scene.add(m)}
+/* Mây: vài đám mây thấp trôi chậm */
+const clouds=[];
+{const mat=new THREE.MeshLambertMaterial({color:'#ffffff',transparent:true,opacity:.92});
+ for(let i=0;i<7;i++){const g=new THREE.Group(),ico=new THREE.IcosahedronGeometry(1,0);
+  for(let k=0;k<4;k++){const m=new THREE.Mesh(ico,mat);m.position.set((k-1.5)*3,Math.sin(k*2)*.6,Math.cos(k)*1.2);m.scale.set(3+k%2*1.2,1.8,2.4);g.add(m)}
+  g.position.set(-150+RND()*300,55+RND()*25,-120+RND()*220);scene.add(g);clouds.push(g)}}
+
+// Đưa các khối tĩnh lên cảnh
+{const w=wallB.mesh(matWall),p=plainB.mesh(matFlat),g=groundB.mesh(matFlat,false,true),l=glowB.mesh(matGlow,false,false);
+ scene.add(w,p,g,l);const gr=gymRoofB.mesh(matFlat);scene.add(gr);window.__gymRoof=gr}
+
+/* ========== 5. NHÂN VẬT CHIBI & VA CHẠM ========== */
+const SC=.8;                                                   // tỉ lệ nhân vật so với thế giới
+const SKIN=['#f2c9a0','#e8b88a','#f5d5b0','#d9a577'],HAIRC=['#2b1d14','#3a2618','#1c1410','#4a3020','#5a3a22'];
+const CH=(()=>{                                                // các bộ phận dựng bằng code (low-poly), gốc tại bàn chân, mặt hướng +Z
+  const B=(fn)=>{const b=new Batch();fn(b);return b.mesh(matFlat).geometry};
+  return{
+    torso:B(b=>{b.add(UNIT_BOX,M(0,.78,0,.54,.56,.36),'#ffffff');b.add(UNIT_BOX,M(0,.84,.185,.09,.3,.02),'#c9d6ee')}),                   // thân + dây thẻ sinh viên
+    head:B(b=>{b.add(new THREE.SphereGeometry(.37,12,9),M(0,1.38,0,1,.95,1),'#ffffff');
+      for(const s of[-1,1]){b.add(new THREE.SphereGeometry(.05,6,5),M(.13*s,1.38,.345),'#2a1c14');b.add(new THREE.SphereGeometry(.07,6,5),M(.21*s,1.29,.3,1,.6,.5),'#ffb59e')}}),
+    hair:B(b=>{b.add(new THREE.SphereGeometry(.4,14,8,0,TAU,0,Math.PI*.6),M(0,1.43,-.03,1,.98,1,0,-.42),'#ffffff')}),
+    leg:B(b=>{b.add(UNIT_BOX,M(0,-.25,0,.2,.5,.22),'#ffffff');b.add(UNIT_BOX,M(0,-.46,.04,.22,.12,.3),'#4a3a32')}),
+    arm:B(b=>{b.add(UNIT_BOX,M(0,-.24,0,.15,.48,.15),'#ffffff')}),
+    pack:B(b=>{b.add(UNIT_BOX,M(0,.85,-.27,.42,.46,.2),'#ffffff');b.add(UNIT_BOX,M(0,.7,-.39,.3,.16,.05),'#ffffff')})}
+})();
+const matCh=new THREE.MeshLambertMaterial({vertexColors:true});
+function makeChibi(o){                                          // nhân vật người chơi (từng bộ phận để tạo dáng đi)
+  const g=new THREE.Group(),mk=(geo,col,ex)=>{const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({vertexColors:true,color:col}));m.castShadow=true;return m};
+  const P={};
+  g.add(P.torso=mk(CH.torso,o.shirt));g.add(P.head=mk(CH.head,o.skin));g.add(P.hair=mk(CH.hair,o.hair));g.add(P.pack=mk(CH.pack,o.pack));
+  const piv=(geo,col,x,y)=>{const m=mk(geo,col);m.position.set(x,y,0);g.add(m);return m};
+  P.legL=piv(CH.leg,o.pants,-.13,.5);P.legR=piv(CH.leg,o.pants,.13,.5);P.armL=piv(CH.arm,o.shirt,-.37,1.0);P.armR=piv(CH.arm,o.shirt,.37,1.0);
+  g.scale.setScalar(SC);return{g,P};
+}
+const me=makeChibi({shirt:'#fffaf0',pants:'#34507f',skin:SKIN[0],hair:HAIRC[0],pack:'#f08a3a'});
+scene.add(me.g);
+const player={x:WX(650),z:WZ(556),yaw:Math.PI/2,vx:0,vz:0,phase:0,speed:0,cheer:0};
+
+const PR_RAD=.42;
+function resolveCircle(p,r){                                   // đẩy ra khỏi tường, nhà, cây (không đi xuyên)
+  for(let it=0;it<2;it++){
+    for(const c of colliders){
+      if(p.x<c.x0-r||p.x>c.x1+r||p.z<c.z0-r||p.z>c.z1+r)continue;
+      const px=clamp(p.x,c.x0,c.x1),pz=clamp(p.z,c.z0,c.z1),dx=p.x-px,dz=p.z-pz,d=Math.hypot(dx,dz);
+      if(d<r){if(d>1e-4){p.x=px+dx/d*r;p.z=pz+dz/d*r}else{const l=p.x-c.x0,rr=c.x1-p.x,t=p.z-c.z0,b=c.z1-p.z,m=Math.min(l,rr,t,b);if(m===l)p.x=c.x0-r;else if(m===rr)p.x=c.x1+r;else if(m===t)p.z=c.z0-r;else p.z=c.z1+r}}
+    }
+    for(const c of circles){const dx=p.x-c.x,dz=p.z-c.z,d=Math.hypot(dx,dz),rr=r+c.r;if(d<rr&&d>1e-4){p.x=c.x+dx/d*rr;p.z=c.z+dz/d*rr}}
+  }
+}
+function movePlayer(dx,dz){
+  const ox=player.x,oz=player.z;
+  player.x+=dx;player.z+=dz;resolveCircle(player,PR_RAD);
+  if(!inCampus(player.x,player.z,PR_RAD)){                      // không ra khỏi hàng rào khuôn viên
+    if(inCampus(ox+dx,oz,PR_RAD)){player.x=ox+dx;player.z=oz}else if(inCampus(ox,oz+dz,PR_RAD)){player.x=ox;player.z=oz+dz}else{player.x=ox;player.z=oz}
+    resolveCircle(player,PR_RAD);
+  }
+}
+resolveCircle(player,PR_RAD);
+
+/* ========== 6. KHÁCH AI (InstancedMesh) + tìm đường ========== */
+// Lưới đi lại cho AI: ô 1×1 đơn vị; chặn ngoài hàng rào, nhà, cây, nhà thi đấu; ưu tiên đi trên đường
+const GX=170,GZ=125,GOX=-85,GOZ=-60,NN=GX*GZ;
+const navBlock=new Uint8Array(NN),navPath=new Uint8Array(NN);
+(function buildNav(){
+  for(let j=0;j<GZ;j++)for(let i=0;i<GX;i++){
+    const x=GOX+i+.5,z=GOZ+j+.5;let b=!inCampus(x,z,1.1);
+    if(!b)for(const c of colliders)if(x>c.x0-.7&&x<c.x1+.7&&z>c.z0-.7&&z<c.z1+.7){b=true;break}
+    if(!b)for(const c of circles)if(Math.hypot(x-c.x,z-c.z)<c.r+.8){b=true;break}
+    if(!b)for(const c of navExtra)if(x>c.x0&&x<c.x1&&z>c.z0&&z<c.z1){b=true;break}
+    navBlock[j*GX+i]=b?1:0;navPath[j*GX+i]=(!b&&pathDist(x,z)<1.5)?1:0;
+  }
+})();
+const cellOf=(x,z)=>{const i=Math.floor(x-GOX),j=Math.floor(z-GOZ);return(i<0||j<0||i>=GX||j>=GZ)?-1:j*GX+i};
+function nearFree(c){
+  if(c<0)return -1;if(!navBlock[c])return c;const ci=c%GX,cj=(c-ci)/GX;
+  for(let r=1;r<8;r++)for(let dj=-r;dj<=r;dj++)for(let di=-r;di<=r;di++){if(Math.max(Math.abs(di),Math.abs(dj))!==r)continue;const i=ci+di,j=cj+dj;if(i<0||j<0||i>=GX||j>=GZ)continue;if(!navBlock[j*GX+i])return j*GX+i}
+  return -1;
+}
+function losClear(x0,z0,x1,z1){const d=Math.hypot(x1-x0,z1-z0),n=Math.max(1,Math.ceil(d/.45));for(let k=1;k<=n;k++){const t=k/n,c=cellOf(x0+(x1-x0)*t,z0+(z1-z0)*t);if(c<0||navBlock[c])return false}return true}
+const gG=new Float32Array(NN),gPrev=new Int32Array(NN),gSeen=new Int32Array(NN);let gStamp=0;
+const hF=[],hI=[];
+function hPush(f,i){let k=hF.length;hF.push(f);hI.push(i);while(k>0){const p=(k-1)>>1;if(hF[p]<=f)break;hF[k]=hF[p];hI[k]=hI[p];k=p}hF[k]=f;hI[k]=i}
+function hPop(){const top=hI[0],lf=hF.pop(),li=hI.pop(),n=hF.length;if(n){let k=0;for(;;){let c=2*k+1;if(c>=n)break;if(c+1<n&&hF[c+1]<hF[c])c++;if(hF[c]>=lf)break;hF[k]=hF[c];hI[k]=hI[c];k=c}hF[k]=lf;hI[k]=li}return top}
+const D8=[[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,1.414],[1,-1,1.414],[-1,1,1.414],[-1,-1,1.414]];
+function findPath(sx,sz,tx,tz){                                // A* trên lưới, đường đi rẻ hơn bãi cỏ
+  const s=nearFree(cellOf(sx,sz)),t=nearFree(cellOf(tx,tz));if(s<0||t<0)return null;
+  gStamp++;hF.length=0;hI.length=0;gSeen[s]=gStamp;gG[s]=0;gPrev[s]=-1;hPush(0,s);const ti=t%GX,tj=(t-ti)/GX;let found=false,guard=0;
+  while(hF.length&&guard++<60000){
+    const c=hPop();if(c===t){found=true;break}
+    const ci=c%GX,cj=(c-ci)/GX;
+    for(let d=0;d<8;d++){const ni=ci+D8[d][0],nj=cj+D8[d][1];if(ni<0||nj<0||ni>=GX||nj>=GZ)continue;const n=nj*GX+ni;if(navBlock[n])continue;
+      if(D8[d][2]>1&&(navBlock[cj*GX+ni]||navBlock[nj*GX+ci]))continue;
+      const g=gG[c]+D8[d][2]*(navPath[n]?1:1.9);if(gSeen[n]===gStamp&&g>=gG[n])continue;
+      gSeen[n]=gStamp;gG[n]=g;gPrev[n]=c;const dx=Math.abs(ni-ti),dj=Math.abs(nj-tj);hPush(g+Math.max(dx,dj)+.414*Math.min(dx,dj),n)}
+  }
+  if(!found)return null;
+  const raw=[];for(let c=t;c!==-1;c=gPrev[c])raw.push([GOX+(c%GX)+.5,GOZ+Math.floor(c/GX)+.5]);raw.reverse();
+  const out=[];let cx=sx,cz=sz,i=0;                              // kéo căng đường đi (bỏ điểm thừa)
+  while(i<raw.length){let j=raw.length-1;while(j>i&&!losClear(cx,cz,raw[j][0],raw[j][1]))j--;out.push(raw[j]);cx=raw[j][0];cz=raw[j][1];i=j+1}
+  return out;
+}
+// Điểm đến phổ biến của khách AI
+const POI=[];
+HOT.forEach(h=>POI.push([h.x,h.z]));Object.values(ENTRY).forEach(e=>POI.push(e));
+INNER.forEach(l=>{for(let i=0;i<l.length-1;i++){const a=l[i],b=l[i+1],L=Math.hypot(b[0]-a[0],b[1]-a[1]);for(let t=3;t<L;t+=9)POI.push([a[0]+(b[0]-a[0])*t/L,a[1]+(b[1]-a[1])*t/L])}});
+POI.push([MINICOURT.x0+3,(MINICOURT.z0+MINICOURT.z1)/2],[BANYAN.x+3,BANYAN.z+3],[HOUSE.cx,HOUSE.cz+5],[62,-2],[60,22]);
+
+const AGENT_N=LOW?36:52;                                       // 30–60 sinh viên AI
+const PARTS=['torso','head','hair','legL','legR','armL','armR'];
+const AG={};
+{const geo={torso:CH.torso,head:CH.head,hair:CH.hair,legL:CH.leg,legR:CH.leg,armL:CH.arm,armR:CH.arm};
+ PARTS.forEach(k=>{const m=new THREE.InstancedMesh(geo[k],matCh,AGENT_N);m.castShadow=true;m.frustumCulled=false;m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);AG[k]=m;scene.add(m)})}
+const agents=[];
+function randPathCell(){for(let k=0;k<400;k++){const i=Math.floor(Math.random()*GX),j=Math.floor(Math.random()*GZ),c=j*GX+i;if(navPath[c]&&!navBlock[c])return[GOX+i+.5+(Math.random()-.5)*.8,GOZ+j+.5+(Math.random()-.5)*.8]}return[0,0]}
+const shirtPal=['#ffffff','#ffffff','#fffaf0','#e8f1fb','#cfe3f7','#ffd9a8','#f4a261'],pantPal=['#2f4a7a','#2b2b3a','#3a3a3a','#8a7658','#34507f','#5a4a3a'];
+for(let i=0;i<AGENT_N;i++){
+  const u=Math.random(),role=u<.2?'run':u<.38?'pray':'walk',p=randPathCell();
+  const a={x:p[0],z:p[1],yaw:Math.random()*TAU,role,speed:role==='run'?4.2+Math.random()*1.1:1.8+Math.random()*.8,state:'wait',wait:Math.random()*4,path:null,pi:0,phase:Math.random()*10,pose:'idle',lap:Math.floor(Math.random()*4),cyc:0,bub:0,cool:Math.random()*8};
+  const shirt=new THREE.Color(pick(shirtPal)),pants=new THREE.Color(pick(pantPal)),white=new THREE.Color('#ffffff');
+  AG.torso.setColorAt(i,shirt);AG.armL.setColorAt(i,shirt);AG.armR.setColorAt(i,shirt);
+  AG.head.setColorAt(i,new THREE.Color(pick(SKIN)));AG.hair.setColorAt(i,new THREE.Color(pick(HAIRC)));
+  AG.legL.setColorAt(i,pants);AG.legR.setColorAt(i,pants);
+  if(role==='run'){const r=PITCH;a.x=lerp(r.x0+2,r.x1-2,Math.random());a.z=lerp(r.z0+2,r.z1-2,Math.random())}
+  agents.push(a);
+}
+for(const k of PARTS)AG[k].instanceColor.needsUpdate=true;
+const needQ=[];
+function pickTarget(a){
+  if(a.role==='run'){
+    if(Math.random()<.88){const r=PITCH,k=a.lap=(a.lap+1)%4,c=[[r.x0+1.8,r.z0+1.8],[r.x1-1.8,r.z0+1.8],[r.x1-1.8,r.z1-1.8],[r.x0+1.8,r.z1-1.8]][k];return[c[0]+(Math.random()-.5),c[1]+(Math.random()-.5)]}
+    return pick(POI);
+  }
+  if(a.role==='pray'&&(a.cyc^=1))return[BANYAN.x+2.3+Math.random()*1.4,BANYAN.z+2.6+Math.random()*1.6];
+  return pick(POI);
+}
+function assignPath(a){
+  const t=pickTarget(a),path=findPath(a.x,a.z,t[0],t[1]);
+  if(!path||!path.length){a.state='wait';a.wait=.5;return}
+  a.path=path;a.pi=0;a.state='walk';a.tgt=t;
+}
+const _agM=new THREE.Matrix4(),_loc=new THREE.Matrix4(),_qy=new THREE.Quaternion(),_ax=new THREE.Vector3(0,1,0);
+function setPart(mesh,i,px,py,pz,rx,rz=0){_e.set(rx,0,rz);_q.setFromEuler(_e);_loc.compose(_p.set(px,py,pz),_q,_s.set(1,1,1));_loc.premultiply(_agM);mesh.setMatrixAt(i,_loc)}
+function updateAgents(dt){
+  if(needQ.length)assignPath(needQ.shift());                   // mỗi khung chỉ tính 1 đường để không giật
+  for(let i=0;i<agents.length;i++){
+    const a=agents[i];let moving=false;a.cool-=dt;
+    if(a.state==='wait'){a.wait-=dt;if(a.wait<=0){a.state='need';a.pose='idle';needQ.push(a)}}
+    else if(a.state==='walk'){
+      const w=a.path[a.pi],dx=w[0]-a.x,dz=w[1]-a.z,d=Math.hypot(dx,dz),st=a.speed*dt;
+      if(d<=st+.05){a.x=w[0];a.z=w[1];if(++a.pi>=a.path.length){
+        a.state='wait';a.pose=(a.role==='pray'&&Math.hypot(a.x-BANYAN.x,a.z-BANYAN.z)<6)?'pray':'idle';
+        a.wait=a.pose==='pray'?6+Math.random()*5:a.role==='run'?.05:1.5+Math.random()*5}}
+      else{a.x+=dx/d*st;a.z+=dz/d*st;a.yaw+=angDiff(a.yaw,Math.atan2(dx,dz))*Math.min(1,dt*8);moving=true}
+    }
+    const ph=a.phase+=moving?dt*a.speed*(a.role==='run'?2.3:3.2):0,sw=moving?Math.sin(ph)*(a.role==='run'?1:.6):0;
+    const bob=moving?Math.abs(Math.sin(ph))*.05:0;
+    _qy.setFromAxisAngle(_ax,a.yaw);_agM.compose(_p.set(a.x,bob,a.z),_qy,_s.set(SC,SC,SC));
+    const pray=a.pose==='pray';
+    setPart(AG.torso,i,0,0,0,0);setPart(AG.head,i,0,0,0,pray?.3:0);setPart(AG.hair,i,0,0,0,pray?.3:0);
+    setPart(AG.legL,i,-.13,.5,0,sw);setPart(AG.legR,i,.13,.5,0,-sw);
+    setPart(AG.armL,i,-.37,1.0,0,pray?-1.3:-sw,pray?.5:0);setPart(AG.armR,i,.37,1.0,0,pray?-1.3:sw,pray?-.5:0);
+  }
+  for(const k of PARTS)AG[k].instanceMatrix.needsUpdate=true;
+}
+
+/* ---------- Bong bóng chữ trên đầu khách AI (không bao giờ gán cho người chơi) ---------- */
+const bubLayer=$('#bubbles'),bubs=[];
+for(let i=0;i<4;i++){const el=document.createElement('div');el.className='bub';el.hidden=true;bubLayer.appendChild(el);bubs.push({el,a:null,t:0})}
+const _v3=new THREE.Vector3();
+function toScreen(x,y,z){_v3.set(x,y,z).project(camera);return{x:(_v3.x*.5+.5)*innerWidth,y:(-_v3.y*.5+.5)*innerHeight,vis:_v3.z<1&&_v3.z>-1}}
+let bubTimer=1.5;
+function updateBubbles(dt){
+  bubTimer-=dt;
+  if(bubTimer<=0){bubTimer=.9+Math.random()*1.3;
+    const free=bubs.find(b=>!b.a);
+    if(free){const cands=agents.filter(a=>a.cool<=0&&Math.hypot(a.x-player.x,a.z-player.z)<34&&toScreen(a.x,2.1,a.z).vis);
+      if(cands.length){const a=pick(cands),pool=a.role==='pray'&&Math.random()<.7?SAY.pray:a.role==='run'&&Math.random()<.6?SAY.run:SAY.any;
+        free.a=a;free.t=3.6+Math.random()*1.4;free.el.textContent=pick(pool);free.el.hidden=false;free.el.style.opacity=1;a.cool=14+Math.random()*10}}}
+  for(const b of bubs){
+    if(!b.a)continue;b.t-=dt;
+    if(b.t<=0){b.a=null;b.el.hidden=true;continue}
+    const s=toScreen(b.a.x,2.15,b.a.z);
+    if(!s.vis||s.x<-60||s.x>innerWidth+60||s.y<0||s.y>innerHeight+40){b.el.style.opacity=0;continue}
+    b.el.style.opacity=b.t<.4?b.t/.4:1;b.el.style.transform=`translate(${s.x}px,${s.y}px) translate(-50%,-100%)`;
+  }
+}
+
+/* ========== 7. ÂM THANH (Web Audio, tạo hoàn toàn bằng code) ========== */
+// Tiếng nền: gió, lá xào xạc, chim hót, biển rì rầm từ xa (to dần khi lại gần biển). Có nút tắt tiếng.
+const AU={ctx:null,master:null,seaVol:null,leafG:null,muted:save.muted,buf:null,birds:0};
+function audioStart(){
+  if(AU.ctx){if(AU.ctx.state==='suspended'&&!AU.muted)AU.ctx.resume();return}
+  const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+  let ctx;try{ctx=AU.ctx=new C()}catch(e){return}
+  const master=AU.master=ctx.createGain();master.gain.value=AU.muted?0:.9;master.connect(ctx.destination);
+  const len=ctx.sampleRate*3,buf=ctx.createBuffer(1,len,ctx.sampleRate),d=buf.getChannelData(0);let b0=0,b1=0,b2=0;
+  for(let i=0;i<len;i++){const w=Math.random()*2-1;b0=.99765*b0+w*.099;b1=.963*b1+w*.2965;b2=.57*b2+w*1.05;d[i]=(b0+b1+b2+w*.18)*.18}   // nhiễu hồng (êm hơn nhiễu trắng)
+  AU.buf=buf;
+  const noise=()=>{const s=ctx.createBufferSource();s.buffer=buf;s.loop=true;s.start(0,Math.random()*2);return s};
+  // Gió: nhiễu lọc dải, âm lượng lên xuống chậm
+  {const s=noise(),f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=520;f.Q.value=.45;const g=ctx.createGain();g.gain.value=1.1;
+   const l=ctx.createOscillator(),lg=ctx.createGain();l.frequency.value=.07;lg.gain.value=.55;l.connect(lg).connect(g.gain);l.start();s.connect(f).connect(g).connect(master)}
+  // Biển: nhiễu trầm, sóng dâng hạ chu kỳ khoảng 9 giây
+  {const s=noise(),f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=480;const sw=ctx.createGain();sw.gain.value=.65;
+   const l=ctx.createOscillator(),lg=ctx.createGain();l.frequency.value=.11;lg.gain.value=.35;l.connect(lg).connect(sw.gain);l.start();
+   const v=AU.seaVol=ctx.createGain();v.gain.value=.8;s.connect(f).connect(sw).connect(v).connect(master)}
+  // Lá xào xạc: nhiễu cao, từng đợt ngắn
+  {const s=noise(),h=ctx.createBiquadFilter();h.type='highpass';h.frequency.value=2400;const b=ctx.createBiquadFilter();b.type='bandpass';b.frequency.value=5200;b.Q.value=.6;
+   const g=AU.leafG=ctx.createGain();g.gain.value=0;s.connect(h).connect(b).connect(g).connect(master)
+   setInterval(()=>{if(ctx.state!=='running')return;const t=ctx.currentTime;if(Math.random()<.6){g.gain.setTargetAtTime(1.6+Math.random()*2.2,t,.18);g.gain.setTargetAtTime(.1,t+.3,.35)}},700)}
+  scheduleBird();
+}
+function chirp(){
+  const c=AU.ctx;if(!c||c.state!=='running'||AU.muted)return;
+  const base=2200+Math.random()*2200,n=2+Math.floor(Math.random()*4),pan=c.createStereoPanner?c.createStereoPanner():null,out=c.createGain();out.gain.value=.05+Math.random()*.05;
+  if(pan){pan.pan.value=Math.random()*2-1;out.connect(pan).connect(AU.master)}else out.connect(AU.master);
+  let t=c.currentTime+.02;
+  for(let i=0;i<n;i++){const o=c.createOscillator(),g=c.createGain(),f=base*(1+(Math.random()-.5)*.25),dur=.05+Math.random()*.06;
+    o.type='sine';o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(f*(Math.random()<.5?1.35:.75),t+dur);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(1,t+.01);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g).connect(out);o.start(t);o.stop(t+dur+.02);t+=dur+.03+Math.random()*.05}
+}
+function scheduleBird(){setTimeout(()=>{chirp();scheduleBird()},2200+Math.random()*6000)}
+function tone(f,d,type='sine',v=.15,delay=0,slide=0){
+  const c=AU.ctx;if(!c||AU.muted)return;const t=c.currentTime+delay,o=c.createOscillator(),g=c.createGain();
+  o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(f*slide,t+d);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.012);g.gain.exponentialRampToValueAtTime(.0005,t+d);o.connect(g).connect(AU.master);o.start(t);o.stop(t+d+.05);
+}
+function noiseBurst(d,f,q,v,delay=0){
+  const c=AU.ctx;if(!c||AU.muted||!AU.buf)return;const s=c.createBufferSource();s.buffer=AU.buf;const b=c.createBiquadFilter();b.type='bandpass';b.frequency.value=f;b.Q.value=q;
+  const g=c.createGain(),t=c.currentTime+delay;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0005,t+d);s.connect(b).connect(g).connect(AU.master);s.start(t,Math.random()*2);s.stop(t+d+.02);
+}
+const sfx={
+  tap:()=>tone(680,.09,'triangle',.12),
+  ok:()=>{tone(523,.2,'triangle',.14);tone(659,.2,'triangle',.14,.1);tone(784,.35,'triangle',.14,.2)},
+  no:()=>tone(330,.22,'sine',.1,0,.75),
+  step:()=>noiseBurst(.05,260+Math.random()*80,1.2,.05),
+  rattle:()=>{noiseBurst(.05,1500+Math.random()*1500,4,.2);noiseBurst(.04,2200,5,.12,.04)},
+  drop:()=>{tone(900,.12,'triangle',.12);tone(500,.25,'sine',.12,.1,.6)},
+  bell:()=>{tone(880,1.4,'sine',.12);tone(1320,1.1,'sine',.07,.01);tone(1760,.8,'sine',.04,.02)},
+  pop:()=>tone(420,.14,'sine',.15,0,1.8),
+  flag:()=>{tone(740,.12,'square',.07);tone(988,.16,'square',.07,.09)}};
+function setMuted(m){
+  AU.muted=m;save.muted=m;persist();$('#bMute').textContent=m?'🔇':'🔊';
+  if(AU.master)AU.master.gain.setTargetAtTime(m?0:.9,AU.ctx.currentTime,.05);
+}
+function audioFrame(){                                        // tiếng biển to dần khi lại gần biển
+  if(!AU.seaVol)return;let d=1e9;for(let i=0;i<SEA_EDGE.length-1;i++)d=Math.min(d,segDist(player.x,player.z,SEA_EDGE[i],SEA_EDGE[i+1]));
+  AU.seaVol.gain.setTargetAtTime(.7+2.6*Math.max(0,1-d/55),AU.ctx.currentTime,.4);
+}
+document.addEventListener('visibilitychange',()=>{const c=AU.ctx;if(!c)return;if(document.hidden)c.suspend();else if(!AU.muted)c.resume()});
+
+/* ========== 8. GIAO DIỆN, ĐIỀU KHIỂN & 5 HOẠT ĐỘNG ========== */
+const ui={modal:false,tut:false,started:false};
+const input={ix:0,iy:0,keys:new Set()};
+const gt=[];                                                   // bộ đếm giờ của trò chơi nhỏ, tự dọn khi đóng hộp thoại
+const later=(fn,ms)=>{const id=setTimeout(fn,ms);gt.push(id);return id};
+const clearGT=()=>{gt.splice(0).forEach(clearTimeout)};
+const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
+const modalEl=$('#modal'),mbody=$('#mbody');let modalClose=null;
+function openModal(html,onClose){clearGT();mbody.innerHTML=html;modalEl.hidden=false;ui.modal=true;modalClose=onClose||null;$('#mbox').scrollTop=0;input.keys.clear();setJoy(0,0)}
+function closeModal(){
+  if(modalEl.hidden)return;clearGT();modalEl.hidden=true;ui.modal=false;mbody.innerHTML='';
+  const f=modalClose;modalClose=null;if(f)f();
+}
+$('#mclose').addEventListener('click',closeModal);
+modalEl.addEventListener('pointerdown',e=>{if(e.target===modalEl&&!modalNoBackdrop)closeModal()});
+let modalNoBackdrop=false;
+function toast(msg){const t=$('#toast');const d=el('div','toast',msg);t.appendChild(d);while(t.children.length>3)t.firstChild.remove();setTimeout(()=>d.remove(),2800)}
+
+// Điểm Tâm an: cộng khi làm hoạt động; điểm cao nhất được lưu trên máy (không xếp hạng ai)
+function updateChips(){$('#cScore').textContent=SCORE;$('#cBest').textContent=save.best}
+function addScore(n){SCORE+=n;if(SCORE>save.best)save.best=SCORE;persist();updateChips();toast('+'+n+' Tâm an')}
+const done={att:false,cls:false,run:false,pray:false,que:false};
+function markDone(t){done[t]=true;document.querySelector('.q[data-t="'+t+'"]').classList.add('done');HOT.forEach(h=>{if(h.type===t)h.done=true});if(guide&&guide.type===t)setGuide(null)}
+
+/* ---------- Điểm danh ---------- */
+const NAMES=['Nguyễn Văn An','Trần Thị Bình','Lê Hoàng Cường','Phạm Thu Dung','Võ Minh Em','Đặng Quốc Phong','Bùi Gia Hân','Hồ Thanh Hải','Phan Khánh Linh','Huỳnh Đức Mạnh','Ngô Thảo Nhi','Dương Tuấn Kiệt'];
+function gameAttendance(){
+  const me=(save.name||'Bạn').trim(),mine=me.toLowerCase();
+  const list=shuffle(NAMES.filter(n=>n.toLowerCase()!==mine)).slice(0,6),myIdx=2+Math.floor(Math.random()*4);list.splice(myIdx,0,me);
+  openModal('<h2>Điểm danh</h2><p>Thầy cô đang gọi tên cả lớp. Khi nghe đến <b>tên bạn</b>, hãy bấm “Dạ, có!”. Trả lời sớm một chút cũng không sao.</p><div class="bigname" id="an">…</div><div class="dots" id="adots"></div><p class="muted" id="amsg" style="text-align:center;min-height:20px"></p><div class="row"><button class="btn" id="ayes">Dạ, có!</button></div>');
+  const an=$('#an'),dots=$('#adots'),msg=$('#amsg');list.forEach(()=>dots.appendChild(el('i')));
+  let i=-1,ok=false;
+  function step(){
+    i++;if(i>=list.length){an.textContent='Thầy cô gọi lại lần nữa…';msg.textContent='';later(()=>{i=-1;step()},1500);return}
+    an.textContent=list[i];[...dots.children].forEach((d,k)=>d.classList.toggle('on',k===i));sfx.tap();later(step,i===myIdx?2800:1250);
+  }
+  later(step,700);
+  $('#ayes').onclick=()=>{
+    if(ok)return;
+    if(i===myIdx){ok=true;clearGT();sfx.ok();save.checkins++;persist();addScore(10);markDone('att');
+      mbody.innerHTML='<div class="pass">✅</div><h2 style="text-align:center">Có mặt!</h2><p style="text-align:center">Thầy cô đã ghi tên bạn vào danh sách. Chúc bạn một buổi học thật tốt.</p><div class="stat3"><div><b>'+save.checkins+'</b>lần điểm danh</div><div><b>+10</b>Tâm an</div><div><b>'+save.best+'</b>cao nhất</div></div><div class="row"><button class="btn" id="aok">Đóng</button></div>';
+      $('#aok').onclick=closeModal}
+    else{msg.textContent='Chưa phải tên bạn đâu, cứ bình tĩnh nghe tiếp nhé.';sfx.no()}
+  };
+}
+
+/* ---------- Đi học: 3 câu hỏi nhẹ nhàng ---------- */
+function gameClass(h){
+  const qs=shuffle(QUIZ).slice(0,3);let qi=0,right=0;
+  function render(){
+    const q=qs[qi],ord=shuffle([0,1,2]);
+    mbody.innerHTML='<h2>'+(h?h.name:'Buổi học')+'</h2><p class="muted">Câu '+(qi+1)+'/3 · không tính điểm trừ, cứ thoải mái nhé</p><p><b>'+q[0]+'</b></p><div id="opts"></div><div id="exp"></div>';
+    const box=$('#opts');
+    ord.forEach(oi=>{const b=el('button','opt',q[1][oi]);b.onclick=()=>{
+      [...box.children].forEach(x=>x.disabled=true);const good=oi===q[2];if(good){right++;b.classList.add('ok');sfx.ok()}else{b.classList.add('no');[...box.children].forEach((x,k)=>{if(ord[k]===q[2])x.classList.add('ok')});sfx.no()}
+      $('#exp').innerHTML='<p>'+(good?'Chính xác! ':'Gần đúng rồi. ')+q[3]+'</p><div class="row"><button class="btn small" id="qn">'+(qi<2?'Câu tiếp':'Xong buổi học')+'</button></div>';
+      $('#qn').onclick=()=>{qi++;if(qi<3)render();else finish()}};box.appendChild(b)});
+  }
+  function finish(){
+    const pts=5+right*5;save.classes++;persist();addScore(pts);markDone('cls');
+    mbody.innerHTML='<div class="pass">📚</div><h2 style="text-align:center">Hết buổi học</h2><p style="text-align:center">Bạn trả lời đúng <b>'+right+'/3</b> câu. Học một chút mỗi ngày là đủ rồi!</p><div class="stat3"><div><b>'+save.classes+'</b>buổi học</div><div><b>+'+pts+'</b>Tâm an</div><div><b>'+save.best+'</b>cao nhất</div></div><div class="row"><button class="btn" id="cok">Đóng</button></div>';
+    $('#cok').onclick=closeModal;
+  }
+  openModal('');render();
+}
+
+/* ---------- Chạy thể dục: chạy qua 5 lá cờ trên sân bóng ---------- */
+const RUN={on:false,i:0,t:0,pts:[]},runFlag=new THREE.Group();
+{const col=new THREE.Color('#e8452c');
+ const pole=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,2.4,6),new THREE.MeshLambertMaterial({color:'#eee'}));pole.position.y=1.2;
+ const cloth=new THREE.Mesh(new THREE.BoxGeometry(.9,.55,.04),new THREE.MeshLambertMaterial({color:col}));cloth.position.set(.45,2.1,0);
+ const ring=new THREE.Mesh(new THREE.RingGeometry(1.0,1.5,28).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:'#ffb43a',transparent:true,opacity:.8,depthWrite:false}));ring.position.y=.2;
+ const beam=new THREE.Mesh(new THREE.CylinderGeometry(.7,.7,8,12,1,true),new THREE.MeshBasicMaterial({color:'#ffb43a',transparent:true,opacity:.15,depthWrite:false,side:THREE.DoubleSide}));beam.position.y=4;
+ runFlag.add(pole,cloth,ring,beam);runFlag.visible=false;scene.add(runFlag)}
+function startRun(){
+  const r=PITCH,m=2.2;
+  RUN.pts=[[r.x0+m,r.z0+m],[r.x1-m,r.z0+m],[r.x1-m,r.z1-m],[r.x0+m,r.z1-m],[(r.x0+r.x1)/2,(r.z0+r.z1)/2]];
+  RUN.on=true;RUN.i=0;RUN.t=0;runFlag.visible=true;runFlag.position.set(RUN.pts[0][0],0,RUN.pts[0][1]);$('#runbar').hidden=false;updateRunBar();
+  toast('Chạy tới các lá cờ cam nhé. Không giới hạn thời gian, cứ thoải mái.');sfx.pop();
+}
+function updateRunBar(){$('#runTxt').textContent='🏃 Cờ '+Math.min(RUN.i+1,5)+'/5 · '+RUN.t.toFixed(1)+' giây'}
+function stopRun(finished){
+  RUN.on=false;runFlag.visible=false;$('#runbar').hidden=true;
+  if(!finished){toast('Đã dừng. Hẹn bạn vòng sau nhé!');return}
+  const t=RUN.t,pts=t<35?25:20;save.runs++;persist();addScore(pts);markDone('run');player.cheer=1.4;sfx.ok();
+  openModal('<div class="pass">🏃</div><h2 style="text-align:center">Hoàn thành!</h2><p style="text-align:center">Bạn chạy qua 5 lá cờ trong <b>'+t.toFixed(1)+' giây</b>. Cơ thể khỏe thì đầu óc cũng nhẹ hơn.</p><div class="stat3"><div><b>'+save.runs+'</b>lần chạy</div><div><b>+'+pts+'</b>Tâm an</div><div><b>'+save.best+'</b>cao nhất</div></div><div class="row"><button class="btn" id="rok">Đóng</button></div>');
+  $('#rok').onclick=closeModal;
+}
+$('#runStop').addEventListener('click',()=>stopRun(false));
+function runFrame(dt){
+  if(!RUN.on)return;RUN.t+=dt;const p=RUN.pts[RUN.i];
+  if(Math.hypot(player.x-p[0],player.z-p[1])<1.6){sfx.flag();RUN.i++;if(RUN.i>=5){stopRun(true);return}runFlag.position.set(RUN.pts[RUN.i][0],0,RUN.pts[RUN.i][1])}
+  updateRunBar();runFlag.children[1].rotation.y=Math.sin(performance.now()/180)*.3;
+}
+
+/* ---------- Dải lụa đỏ treo trên cây đa ---------- */
+const ribbons=[];
+function wrapText(g,text,maxW){const words=text.split(/\s+/),lines=[];let cur='';for(const w of words){const t=cur?cur+' '+w:w;if(g.measureText(t).width>maxW&&cur){lines.push(cur);cur=w}else cur=t}if(cur)lines.push(cur);return lines}
+function ribbonTex(text,who){
+  const c=document.createElement('canvas');c.width=192;c.height=400;const g=c.getContext('2d');
+  const gr=g.createLinearGradient(0,0,192,0);gr.addColorStop(0,'#b81f1a');gr.addColorStop(.5,'#d93a2b');gr.addColorStop(1,'#b81f1a');
+  g.beginPath();g.moveTo(0,0);g.lineTo(192,0);g.lineTo(192,400);g.lineTo(96,356);g.lineTo(0,400);g.closePath();g.fillStyle=gr;g.fill();
+  g.strokeStyle='#f7cf6a';g.lineWidth=4;g.beginPath();g.moveTo(9,9);g.lineTo(183,9);g.lineTo(183,380);g.lineTo(96,338);g.lineTo(9,380);g.closePath();g.stroke();
+  const fs=text.length<=36?30:text.length<=70?25:21;g.font='bold '+fs+'px system-ui,sans-serif';g.fillStyle='#fff4d6';g.textAlign='center';g.textBaseline='top';
+  const lines=wrapText(g,text,158),lh=fs*1.28,y0=Math.max(22,(300-lines.length*lh)/2+16);lines.forEach((l,i)=>g.fillText(l,96,y0+i*lh));
+  g.font='bold 15px system-ui,sans-serif';g.fillStyle='#ffe3a0';g.fillText('— '+who.slice(0,16),96,316);
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;
+}
+function removeRibbon(slot){const r=ribbons[slot];if(!r)return;scene.remove(r.g);r.tex.dispose();r.mats.forEach(m=>m.dispose());r.geo.dispose();ribbons[slot]=null}   // giải phóng texture khi không dùng
+const ribGeo=new THREE.PlaneGeometry(.95,2).translate(0,-1,0),cordGeo=new THREE.CylinderGeometry(.03,.03,.3,5);
+function hangRibbon(idx,text,who,animate){
+  const slot=idx%RIB_SLOTS.length,S0=RIB_SLOTS[slot];removeRibbon(slot);
+  const tex=ribbonTex(text,who),g=new THREE.Group(),geo=ribGeo;
+  const mk=()=>new THREE.MeshLambertMaterial({map:tex,alphaTest:.5,side:THREE.FrontSide}),m1=mk(),m2=mk();
+  const a=new THREE.Mesh(geo,m1),b=new THREE.Mesh(geo,m2);b.rotation.y=Math.PI;a.position.z=.012;b.position.z=-.012;
+  const cord=new THREE.Mesh(cordGeo,new THREE.MeshLambertMaterial({color:'#7a2e1d'}));cord.position.y=.12;
+  const cl=new THREE.Group();cl.add(a,b,cord);g.add(cl);g.position.set(S0.x,S0.y-.1,S0.z);g.rotation.y=Math.PI/2-S0.a;
+  a.castShadow=b.castShadow=true;scene.add(g);
+  ribbons[slot]={g:cl,root:g,tex,mats:[m1,m2,cord.material],geo:null,t0:animate?performance.now():-1e9,ph:Math.random()*6,slot};
+  ribbons[slot].geo=cordGeo.clone();                           // bản sao để dispose an toàn
+  return S0;
+}
+function ribbonsFrame(now){
+  for(const r of ribbons){if(!r)continue;const k=clamp((now-r.t0)/1300,0,1),s=k>=1?1:1+2.2*Math.pow(k-1,3)+1.2*Math.pow(k-1,2);
+    r.g.scale.set(Math.max(.01,s),Math.max(.01,s),1);r.g.rotation.z=Math.sin(now/900+r.ph)*.06;r.g.rotation.x=Math.sin(now/1300+r.ph)*.05}
+}
+const FX={t:0,x:0,z:0};                                        // cảnh quay gần dải lụa sau khi treo
+function gamePray(){
+  openModal('<h2>Viết lời cầu qua môn</h2><p class="muted">Lời cầu của bạn sẽ được viết lên một dải lụa đỏ, treo trên cây đa cạnh nhà truyền thống. Tối đa 120 ký tự.</p><textarea id="pt" maxlength="120" placeholder="Ví dụ: Cầu cho em qua môn Giải tích…" rows="4"></textarea><div class="cnt"><span id="pc">0</span>/120</div><div class="chips" id="pch"></div><div class="row"><button class="btn ghost small" id="pno">Để sau</button><button class="btn small" id="pyes">🎀 Treo lên cây đa</button></div>');
+  const ta=$('#pt');PRAYER_IDEAS.forEach(t=>{const b=el('button','',t);b.onclick=()=>{ta.value=t;$('#pc').textContent=t.length;sfx.tap()};$('#pch').appendChild(b)});
+  ta.addEventListener('input',()=>{$('#pc').textContent=ta.value.length});
+  $('#pno').onclick=closeModal;
+  $('#pyes').onclick=()=>{
+    const text=ta.value.replace(/\s+/g,' ').trim().slice(0,120);if(!text){toast('Hãy viết vài chữ nhé');return}
+    save.prayers.push({text,ts:Date.now()});if(save.prayers.length>100)save.prayers.shift();persist();
+    closeModal();const idx=save.prayers.length-1,S0=hangRibbon(idx,text,save.name||'Bạn',true);
+    FX.t=3.6;FX.x=S0.x;FX.z=S0.z;sfx.pop();later(()=>sfx.bell(),500);setTimeout(()=>{addScore(15);markDone('pray');toast('Dải lụa đã được treo lên cây đa')},700);
+  };
+  later(()=>{if(!IS_TOUCH)ta.focus()},100);
+}
+
+/* ---------- Xin quẻ học hành (giải trí): lắc ống xăm → rơi một thẻ ---------- */
+let motionHandler=null;
+function gameQue(){
+  openModal('<h2>Xin quẻ học hành</h2><p class="muted">Lắc điện thoại, hoặc chạm giữ nút bên dưới để lắc ống xăm. Một thẻ sẽ rơi ra. <b>Mang tính giải trí.</b></p><div id="qbox"><div class="tube" id="tube"><svg viewBox="0 0 150 190" aria-hidden="true"><g transform="translate(75 40)"><g fill="#f2d79a" stroke="#c98b4a" stroke-width="1.5"><rect x="-32" y="-30" width="7" height="80" rx="3" transform="rotate(-14)"/><rect x="-22" y="-42" width="7" height="90" rx="3" transform="rotate(-8)"/><rect x="-10" y="-38" width="7" height="90" rx="3" transform="rotate(-2)"/><rect x="3" y="-46" width="7" height="94" rx="3" transform="rotate(5)"/><rect x="14" y="-36" width="7" height="88" rx="3" transform="rotate(11)"/><rect x="24" y="-28" width="7" height="80" rx="3" transform="rotate(17)"/></g></g><path d="M28 70 L122 70 L112 178 Q75 190 38 178 Z" fill="#c9854a" stroke="#8a4b24" stroke-width="3"/><rect x="26" y="66" width="98" height="12" rx="5" fill="#a8431a"/><rect x="40" y="110" width="70" height="26" rx="4" fill="#f6e3b8" stroke="#8a4b24" stroke-width="2"/><text x="75" y="129" text-anchor="middle" font-size="16" font-weight="800" fill="#a8431a" font-family="system-ui,sans-serif">籤 · QUẺ</text></svg></div><div class="bar"><i id="qbar"></i></div><div class="row"><button class="btn" id="qhold">🎋 Chạm giữ để lắc</button></div><p class="muted" style="text-align:center" id="qmsg">Mẹo: trên điện thoại bạn có thể lắc máy thật.</p><div class="row"><button class="btn ghost small" id="qsensor">Bật cảm biến lắc</button></div></div>');
+  let p=0,holding=false,last=0,rattleT=0,finished=false;const bar=$('#qbar'),box=$('#qbox');
+  const add=v=>{if(finished)return;p=Math.min(1,p+v);bar.style.width=(p*100)+'%';if(p>=1)finish()};
+  const tick=setInterval(()=>{if(finished)return;if(holding){add(.026);if(++rattleT%2===0)sfx.rattle()}box.classList.toggle('shaking',holding||(performance.now()-last<250))},50);
+  gt.push(tick);
+  const hold=$('#qhold');
+  hold.addEventListener('pointerdown',e=>{holding=true;hold.setPointerCapture(e.pointerId);e.preventDefault()});
+  ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>hold.addEventListener(ev,()=>{holding=false}));
+  hold.addEventListener('keydown',e=>{if(e.code==='Space'||e.key==='Enter'){holding=true;e.preventDefault()}});hold.addEventListener('keyup',()=>{holding=false});
+  let lm=null,lastShake=0;
+  function onMotion(ev){const a=ev.accelerationIncludingGravity;if(!a)return;const m=Math.hypot(a.x||0,a.y||0,a.z||0);
+    if(lm!==null&&Math.abs(m-lm)>9&&performance.now()-lastShake>90){lastShake=last=performance.now();add(.07);sfx.rattle()}lm=m}
+  function attach(){if(motionHandler)return;motionHandler=onMotion;window.addEventListener('devicemotion',motionHandler)}
+  $('#qsensor').onclick=async()=>{
+    try{if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){const r=await DeviceMotionEvent.requestPermission();if(r!=='granted'){$('#qmsg').textContent='Máy chưa cho phép cảm biến, bạn hãy chạm giữ nút để lắc nhé.';return}}
+      attach();$('#qmsg').textContent='Đã bật cảm biến. Hãy lắc máy!';$('#qsensor').hidden=true}catch(e){$('#qmsg').textContent='Máy này không hỗ trợ cảm biến lắc, hãy chạm giữ nút nhé.'}};
+  if(!(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function')){if(IS_TOUCH&&typeof DeviceMotionEvent!=='undefined'){attach();$('#qsensor').hidden=true}else $('#qsensor').hidden=true}
+  modalClose=()=>{if(motionHandler){window.removeEventListener('devicemotion',motionHandler);motionHandler=null}};
+  function finish(){
+    finished=true;clearGT();holding=false;sfx.drop();setTimeout(sfx.bell,350);
+    const n=Math.floor(Math.random()*QUE.length),text=QUE[n];save.draws.push({n:n+1,text,ts:Date.now()});if(save.draws.length>100)save.draws.shift();persist();addScore(10);markDone('que');
+    box.classList.remove('shaking');
+    box.innerHTML='<div class="stick"><div class="no">QUẺ SỐ '+(n+1)+'</div><div class="tx"></div><div class="en">Mang tính giải trí</div></div><div class="row"><button class="btn ghost small" id="qshare">📤 Chia sẻ</button><button class="btn small" id="qok">Cảm ơn</button></div>';
+    box.querySelector('.tx').textContent=text;$('#qok').onclick=closeModal;$('#qshare').onclick=()=>openShare({kind:'que',text,n:n+1});
+  }
+}
+
+/* ---------- Sổ cầu an của tôi ---------- */
+const fmtDate=ts=>{try{return new Date(ts).toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'})}catch(e){return''}};
+function openBook(){
+  openModal('<h2>Sổ cầu an của '+'<span id="bn"></span></h2><div class="stat3"><div><b>'+save.checkins+'</b>lần điểm danh</div><div><b>'+save.classes+'</b>buổi học</div><div><b>'+save.best+'</b>Tâm an cao nhất</div></div><h3>🎀 Lời cầu (<span id="bp"></span>)</h3><div id="bl"></div><h3>🎋 Quẻ đã xin (<span id="bq"></span>)</h3><div id="bd"></div><p class="muted">Mọi thứ chỉ lưu trên máy của bạn, không gửi đi đâu.</p><div class="row"><button class="btn ghost small" id="bwipe">Xóa dữ liệu trên máy</button></div>');
+  $('#bn').textContent=save.name||'bạn';$('#bp').textContent=save.prayers.length;$('#bq').textContent=save.draws.length;
+  const L=$('#bl'),D=$('#bd');
+  if(!save.prayers.length)L.appendChild(el('p','muted','Chưa có lời cầu nào. Hãy đến cây đa nhé.'));
+  save.prayers.slice().reverse().forEach(p=>{const e=el('div','entry');e.appendChild(el('div','',p.text));e.appendChild(el('small','',fmtDate(p.ts)));const b=el('button','','📤 Chia sẻ');b.onclick=()=>openShare({kind:'prayer',text:p.text});e.appendChild(b);L.appendChild(e)});
+  if(!save.draws.length)D.appendChild(el('p','muted','Chưa có quẻ nào. Hãy đến gian xin quẻ nhé.'));
+  save.draws.slice().reverse().forEach(p=>{const e=el('div','entry');e.appendChild(el('div','','Quẻ số '+p.n+': '+p.text));e.appendChild(el('small','',fmtDate(p.ts)+' · Mang tính giải trí'));const b=el('button','','📤 Chia sẻ');b.onclick=()=>openShare({kind:'que',text:p.text,n:p.n});e.appendChild(b);D.appendChild(e)});
+  let armed=false;$('#bwipe').onclick=function(){if(!armed){armed=true;this.textContent='Bấm lần nữa để xóa hết';return}try{localStorage.removeItem(KEY)}catch(e){}location.reload()};
+}
+
+/* ========== 9. CHIA SẺ: vẽ ảnh dọc 1080×1350 bằng canvas ========== */
+function makeShareCanvas(o){
+  const W=1080,H=1350,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d'),name=save.name||'Sinh viên NTU';
+  let gr=g.createLinearGradient(0,0,0,760);gr.addColorStop(0,'#f6a96c');gr.addColorStop(.5,'#ffd7a0');gr.addColorStop(1,'#fff0d4');g.fillStyle=gr;g.fillRect(0,0,W,H);
+  const sunG=g.createRadialGradient(800,300,10,800,300,260);sunG.addColorStop(0,'rgba(255,248,200,1)');sunG.addColorStop(.35,'rgba(255,222,120,.95)');sunG.addColorStop(1,'rgba(255,210,120,0)');g.fillStyle=sunG;g.fillRect(0,0,W,700);
+  g.fillStyle='#a9d8c0';g.beginPath();g.moveTo(0,640);for(let x=0;x<=W;x+=60)g.lineTo(x,600-Math.sin(x/170)*38-((x*7)%50));g.lineTo(W,700);g.lineTo(0,700);g.fill();           // đồi xa
+  g.fillStyle='#8fd0dc';g.fillRect(0,660,W,70);g.fillStyle='rgba(255,255,255,.55)';for(let i=0;i<14;i++)g.fillRect((i*131)%W,672+(i*17)%48,70,4);                     // biển
+  g.fillStyle='#b4d388';g.fillRect(0,730,W,620);g.fillStyle='#9fc577';g.fillRect(0,730,W,16);
+  g.fillStyle='#efdcb0';g.beginPath();g.moveTo(450,740);g.lineTo(640,740);g.lineTo(980,1100);g.lineTo(380,1100);g.fill();                                              // lối đi
+  function bld(x,w,h,wall,roof,fl){const y=740-h;g.fillStyle='rgba(60,40,10,.15)';g.fillRect(x+10,740,w,14);g.fillStyle=wall;g.fillRect(x,y,w,h);
+    g.fillStyle='#8fa9bd';const cols=Math.max(2,Math.floor(w/54));for(let r=0;r<fl;r++)for(let k=0;k<cols;k++)g.fillRect(x+14+k*((w-28)/cols)+4,y+22+r*(h/fl),((w-28)/cols)-14,h/fl-38);
+    g.fillStyle=roof;g.beginPath();g.moveTo(x-14,y);g.lineTo(x+w*.12,y-52);g.lineTo(x+w*.88,y-52);g.lineTo(x+w+14,y);g.fill();g.fillStyle='rgba(0,0,0,.12)';g.fillRect(x-14,y,w+28,8)}
+  bld(70,200,190,'#f6e7cf','#a8586d',3);bld(760,230,250,'#fae29a','#d9843b',4);bld(300,420,230,'#f8e6c8','#8e2f16',3);
+  g.fillStyle='#e8d3a0';g.fillRect(500,540,80,230);g.fillStyle='#8e2f16';g.beginPath();g.moveTo(488,540);g.lineTo(540,480);g.lineTo(592,540);g.fill();g.fillStyle='#6b6b6b';g.fillRect(538,420,4,70);g.fillStyle='#d2331c';g.fillRect(542,420,46,28);
+  // cây đa + dải lụa đỏ
+  g.fillStyle='#7a5434';g.fillRect(150,520,46,230);g.fillStyle='#4f8a3a';[[170,470,130],[90,520,100],[250,520,105],[170,400,110],[220,440,90]].forEach(a=>{g.beginPath();g.arc(a[0],a[1],a[2],0,TAU);g.fill()});
+  g.fillStyle='#5f9c45';[[140,430,70],[230,470,60]].forEach(a=>{g.beginPath();g.arc(a[0],a[1],a[2],0,TAU);g.fill()});
+  for(let i=0;i<9;i++){const x=70+i*34+(i%2)*6,y=540+(i%3)*14,hh=90+(i%4)*18;g.fillStyle=i%2?'#d93a2b':'#c12a22';g.beginPath();g.moveTo(x,y);g.lineTo(x+20,y);g.lineTo(x+20,y+hh);g.lineTo(x+10,y+hh-12);g.lineTo(x,y+hh);g.fill();g.fillStyle='#f7cf6a';g.fillRect(x,y,20,3)}
+  // chữ
+  g.textAlign='center';g.textBaseline='alphabetic';g.fillStyle='#8a2f10';g.font='900 92px system-ui,sans-serif';g.fillText('KHÁM PHÁ NTU',W/2,150);
+  g.font='600 34px system-ui,sans-serif';g.fillStyle='#a8602f';g.fillText('Dạo khuôn viên · giữ lòng bình an',W/2,205);
+  const cx=70,cy=820,cw=940,ch=380;g.fillStyle='rgba(255,250,238,.95)';rr(g,cx,cy,cw,ch,36);g.fill();g.strokeStyle='#f0c58f';g.lineWidth=5;g.stroke();
+  g.fillStyle='#b84a1c';g.font='800 36px system-ui,sans-serif';
+  const head=o.kind==='que'?'Quẻ số '+o.n+' · học hành':o.kind==='prayer'?'Lời cầu qua môn của '+name:'Chúc bạn học hành thuận lợi';g.fillText(head,W/2,cy+64);
+  const text=o.text||'Cầu cho mọi người học hành thuận lợi, thi cử suôn sẻ, lòng luôn an.';
+  let fs=46,lines;do{g.font='700 '+fs+'px system-ui,sans-serif';lines=wrapText(g,'“'+text+'”',cw-90);fs-=2}while(lines.length*fs*1.35>ch-190&&fs>24);
+  g.fillStyle='#4a2f1b';const lh=fs*1.35+6,y0=cy+110+Math.max(0,(ch-190-lines.length*lh)/2);lines.forEach((l,i)=>g.fillText(l,W/2,y0+i*lh+fs*.8));
+  g.font='700 30px system-ui,sans-serif';g.fillStyle='#8a6a4f';g.fillText(o.kind==='que'?'Mang tính giải trí':'— '+name,W/2,cy+ch-62);
+  g.fillStyle='#4f9a5a';g.font='800 34px system-ui,sans-serif';g.fillText('Điểm Tâm an cao nhất: '+save.best,W/2,cy+ch-20);
+  g.fillStyle='#8a2f10';g.font='700 30px system-ui,sans-serif';g.fillText('Khám Phá NTU · game 3D dạo khuôn viên',W/2,1290);
+  return c;
+}
+function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
+async function openShare(o){
+  const c=makeShareCanvas(o),blob=await new Promise(r=>c.toBlob(r,'image/png')),url=URL.createObjectURL(blob);c.width=c.height=1;      // giải phóng canvas lớn
+  openModal('<h2>Chia sẻ</h2><img class="share" alt="Ảnh chia sẻ Khám Phá NTU"><p class="muted" style="text-align:center">Ảnh dọc 1080×1350. Trên điện thoại có thể nhấn giữ ảnh để lưu.</p><div class="row"><button class="btn small" id="shGo">📤 Chia sẻ</button><button class="btn ghost small" id="shDl">⬇️ Tải ảnh xuống</button></div>',()=>URL.revokeObjectURL(url));
+  mbody.querySelector('img').src=url;
+  const file=new File([blob],'kham-pha-ntu.png',{type:'image/png'});
+  const dl=()=>{const a=document.createElement('a');a.href=url;a.download='kham-pha-ntu.png';document.body.appendChild(a);a.click();a.remove()};
+  $('#shDl').onclick=dl;
+  $('#shGo').onclick=async()=>{
+    try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Khám Phá NTU',text:'Mình vừa dạo khuôn viên NTU trong game Khám Phá NTU'});return}}catch(e){if(e&&e.name==='AbortError')return}
+    dl();toast('Thiết bị chưa hỗ trợ chia sẻ trực tiếp, ảnh đã được tải xuống');
+  };
+}
+function shareLatest(){
+  const p=save.prayers[save.prayers.length-1],q=save.draws[save.draws.length-1];
+  if(p&&(!q||p.ts>=q.ts))openShare({kind:'prayer',text:p.text});else if(q)openShare({kind:'que',text:q.text,n:q.n});else openShare({kind:'plain'});
+}
+
+/* ---------- Hướng dẫn 3 bước (lần đầu vào) ---------- */
+const TUT=[
+ ['🕹️','Di chuyển',IS_TOUCH?'Dùng cần điều khiển ảo ở góc trái màn hình để đi lại. Nhân vật sẽ không đi xuyên tường, nhà hay cây.':'Dùng phím W A S D hoặc các phím mũi tên để đi. Nhân vật sẽ không đi xuyên tường, nhà hay cây.'],
+ ['👆','Xoay góc nhìn','Kéo ngón tay (hoặc chuột) trên màn hình để xoay camera. Bản đồ nhỏ góc phải cùng 5 biểu tượng bên trái sẽ chỉ đường tới từng hoạt động.'],
+ ['✨','Làm hoạt động','Đi tới vòng sáng có cột sáng, nút hành động lớn sẽ hiện ra. Chạm một lần là làm: điểm danh, đi học, chạy thể dục, viết lời cầu, xin quẻ.']];
+let tutI=0;
+function showTut(){tutI=0;ui.tut=true;$('#tut').hidden=false;renderTut()}
+function renderTut(){const t=TUT[tutI];$('#tutIc').textContent=t[0];$('#tutH').textContent=(tutI+1)+'/3 · '+t[1];$('#tutP').textContent=t[2];
+  const d=$('#tutDots');d.innerHTML='';TUT.forEach((_,i)=>d.appendChild(el('i',i===tutI?'on':'')));$('#tutNext').textContent=tutI===2?'Bắt đầu chơi':'Tiếp'}
+function endTut(){ui.tut=false;$('#tut').hidden=true;save.seenTut=true;persist()}
+$('#tutNext').onclick=()=>{sfx.tap();if(tutI<2){tutI++;renderTut()}else endTut()};
+$('#tutSkip').onclick=endTut;$('#bHelp').onclick=showTut;
+
+/* ---------- Điều khiển: cần ảo, bàn phím, kéo để xoay camera ---------- */
+const joy=$('#joy'),knob=$('#knob');let joyId=null,joyC=[0,0];
+function setJoy(x,y){input.ix=x;input.iy=y;knob.style.transform='translate('+(x*38)+'px,'+(-y*38)+'px)'}
+function joyMove(e){const dx=e.clientX-joyC[0],dy=e.clientY-joyC[1],L=Math.hypot(dx,dy),k=Math.min(1,L/48);if(L<8){setJoy(0,0);return}let x=dx/L*k,y=-dy/L*k;if(k<.18){x=0;y=0}setJoy(x,y)}
+joy.addEventListener('pointerdown',e=>{e.preventDefault();joyId=e.pointerId;joy.setPointerCapture(e.pointerId);const r=joy.getBoundingClientRect();joyC=[r.left+r.width/2,r.top+r.height/2];joyMove(e)});
+joy.addEventListener('pointermove',e=>{if(e.pointerId===joyId)joyMove(e)});
+['pointerup','pointercancel'].forEach(ev=>joy.addEventListener(ev,e=>{if(e.pointerId===joyId){joyId=null;setJoy(0,0)}}));
+const camS={yaw:-Math.PI/2,pitch:.5,zoom:1};let drag=null;
+cv.addEventListener('pointerdown',e=>{if(ui.modal||ui.tut)return;drag={id:e.pointerId,x:e.clientX,y:e.clientY};cv.setPointerCapture(e.pointerId)});
+cv.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;camS.yaw-=(e.clientX-drag.x)*.0065;camS.pitch=clamp(camS.pitch+(e.clientY-drag.y)*.005,.16,1.15);drag.x=e.clientX;drag.y=e.clientY});
+['pointerup','pointercancel'].forEach(ev=>cv.addEventListener(ev,e=>{if(drag&&e.pointerId===drag.id)drag=null}));
+cv.addEventListener('wheel',e=>{camS.zoom=clamp(camS.zoom*(1+Math.sign(e.deltaY)*.08),.6,1.7);e.preventDefault()},{passive:false});
+const typing=()=>{const a=document.activeElement;return a&&(a.tagName==='TEXTAREA'||a.tagName==='INPUT')};
+window.addEventListener('keydown',e=>{
+  if(typing())return;
+  if(e.key==='Escape'){closeModal();if(ui.tut)endTut();return}
+  if(ui.modal||ui.tut||!ui.started)return;
+  input.keys.add(e.code);
+  if((e.code==='KeyE'||e.code==='Enter'||e.code==='Space')&&nearHot){e.preventDefault();activate(nearHot)}
+  if(e.code.startsWith('Arrow')||e.code==='Space')e.preventDefault();
+});
+window.addEventListener('keyup',e=>input.keys.delete(e.code));
+window.addEventListener('blur',()=>{input.keys.clear();setJoy(0,0)});
+
+/* ---------- Nút hành động, hướng dẫn tới hoạt động, bản đồ nhỏ ---------- */
+let nearHot=null,guide=null;
+function activate(h){
+  if(ui.modal||RUN.on)return;sfx.tap();
+  ({att:gameAttendance,cls:()=>gameClass(h),run:startRun,pray:gamePray,que:gameQue})[h.type]();
+}
+$('#act').addEventListener('click',()=>{if(nearHot)activate(nearHot)});
+function setNear(h){
+  if(h===nearHot)return;nearHot=h;const a=$('#act');
+  if(!h){a.hidden=true;return}
+  const inf=HOT_INFO[h.type];a.innerHTML='';a.append(inf.icon+' '+inf.verb);a.appendChild(el('small','',h.name));a.hidden=false;
+}
+document.querySelectorAll('.q').forEach(b=>b.addEventListener('click',()=>{sfx.tap();setGuide(guide&&guide.type===b.dataset.t?null:{type:b.dataset.t})}));
+function setGuide(g){guide=g;document.querySelectorAll('.q').forEach(b=>b.classList.toggle('on',!!g&&b.dataset.t===g.type));if(!g)$('#arrow').hidden=true;
+  if(g){const names={att:'Điểm danh',cls:'Giảng đường',run:'Sân bóng đá',pray:'Cây đa',que:'Gian xin quẻ'};toast('Đang chỉ đường tới: '+names[g.type])}}
+function guideTarget(){
+  if(!guide)return null;let best=null,bd=1e9;
+  for(const h of HOT)if(h.type===guide.type){const d=Math.hypot(h.x-player.x,h.z-player.z);if(d<bd){bd=d;best=h}}
+  return best&&{h:best,d:bd};
+}
+const mini=$('#mini'),mctx=mini.getContext('2d'),MW=mini.width,MH=mini.height,MS=1.68,MX=x=>(x+78)*MS,MZ=z=>(z+49)*MS;
+const miniBase=document.createElement('canvas');miniBase.width=MW;miniBase.height=MH;
+(function drawMiniBase(){
+  const g=miniBase.getContext('2d');g.fillStyle='#bcd9e6';g.fillRect(0,0,MW,MH);
+  g.fillStyle='#dcc99a';g.beginPath();CAMPUS.forEach((p,i)=>i?g.lineTo(MX(p[0]),MZ(p[1])):g.moveTo(MX(p[0]),MZ(p[1])));g.closePath();g.fill();
+  g.fillStyle='#a9cc78';g.beginPath();CAMPUS.forEach((p,i)=>i?g.lineTo(MX(p[0]),MZ(p[1])):g.moveTo(MX(p[0]),MZ(p[1])));g.closePath();g.fill();g.strokeStyle='#a0714a';g.lineWidth=2;g.stroke();
+  g.strokeStyle='#efdcb0';g.lineWidth=3;g.lineCap='round';INNER.forEach(l=>{g.beginPath();l.forEach((p,i)=>i?g.lineTo(MX(p[0]),MZ(p[1])):g.moveTo(MX(p[0]),MZ(p[1])));g.stroke()});
+  g.fillStyle='#d4825a';colliders.forEach(c=>{if(c.h>2&&c.x1-c.x0>1&&!(c.x0>GYM.x0-1&&c.x1<GYM.x1+1&&c.z0>GYM.z0-1&&c.z1<GYM.z1+1))g.fillRect(MX(c.x0),MZ(c.z0),Math.max(2,(c.x1-c.x0)*MS),Math.max(2,(c.z1-c.z0)*MS))});
+  g.fillStyle='#7cbd57';g.fillRect(MX(PITCH.x0),MZ(PITCH.z0),(PITCH.x1-PITCH.x0)*MS,(PITCH.z1-PITCH.z0)*MS);
+  g.fillStyle='#e0a860';g.fillRect(MX(GYM.x0),MZ(GYM.z0),(GYM.x1-GYM.x0)*MS,(GYM.z1-GYM.z0)*MS);
+})();
+function drawMini(now){
+  mctx.drawImage(miniBase,0,0);
+  for(const h of HOT){mctx.fillStyle=h.done?'rgba(120,120,120,.7)':'#'+new THREE.Color(HOT_INFO[h.type].color).getHexString();mctx.beginPath();mctx.arc(MX(h.x),MZ(h.z),h.type==='cls'?4:5.5,0,TAU);mctx.fill();mctx.strokeStyle='#fff';mctx.lineWidth=1.5;mctx.stroke()}
+  const gt0=guideTarget();if(gt0){const pu=(now/400)%1;mctx.strokeStyle='rgba(242,184,75,'+(1-pu)+')';mctx.lineWidth=3;mctx.beginPath();mctx.arc(MX(gt0.h.x),MZ(gt0.h.z),6+pu*10,0,TAU);mctx.stroke()}
+  mctx.save();mctx.translate(MX(player.x),MZ(player.z));mctx.rotate(Math.atan2(Math.sin(player.yaw),-Math.cos(player.yaw)));mctx.fillStyle='#d9622b';mctx.strokeStyle='#fff';mctx.lineWidth=2;
+  mctx.beginPath();mctx.moveTo(0,-8);mctx.lineTo(6,6);mctx.lineTo(0,3);mctx.lineTo(-6,6);mctx.closePath();mctx.fill();mctx.stroke();mctx.restore();
+}
+$('#bMute').addEventListener('click',()=>{audioStart();setMuted(!AU.muted);sfx.tap()});
+$('#bBook').addEventListener('click',()=>{sfx.tap();if(!ui.modal)openBook()});
+$('#bShare').addEventListener('click',()=>{sfx.tap();if(!ui.modal)shareLatest()});
+
+/* ========== 10. VÒNG LẶP CHÍNH & KHỞI ĐỘNG ========== */
+const lblLayer=$('#labels'),lblEls=LABELS.map(l=>{const e=el('div','lbl'+(l.big?' big':''),l.t);e.hidden=true;lblLayer.appendChild(e);return e});
+const tag=$('#nameTag'),camPos=new THREE.Vector3(),camLook=new THREE.Vector3(),tgt=new THREE.Vector3(),dirV=new THREE.Vector3();
+let camD=11,lastT=0,frames=0,slow=0,stepPh=0;
+function resize(){const w=innerWidth,h=innerHeight;renderer.setPixelRatio(PR);renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w<h?64:52;camera.updateProjectionMatrix()}
+addEventListener('resize',resize);resize();
+function camBlock(t,d){                                        // camera không xuyên tường nhà
+  let best=1;for(let k=.12;k<=1;k+=.08){const x=t.x+dirV.x*d*k,y=t.y+dirV.y*d*k,z=t.z+dirV.z*d*k;
+    for(const c of colliders)if(y<c.h&&x>c.x0-.5&&x<c.x1+.5&&z>c.z0-.5&&z<c.z1+.5){return Math.max(.18,k-.1)}}
+  return best;
+}
+function frame(ms){
+  requestAnimationFrame(frame);const now=ms,dt=Math.min(.05,(ms-lastT)/1000||.016);lastT=ms;frames++;
+  if(dt>.034){if(++slow>90&&PR>1.1){PR=Math.max(1,PR-.5);resize();slow=0}else if(slow>240){sun.castShadow=false;slow=0}}else if(slow>0)slow-=.5;
+  // --- di chuyển ---
+  let ix=input.ix,iy=input.iy;const k=input.keys;
+  if(k.has('KeyW')||k.has('ArrowUp'))iy+=1;if(k.has('KeyS')||k.has('ArrowDown'))iy-=1;if(k.has('KeyA')||k.has('ArrowLeft'))ix-=1;if(k.has('KeyD')||k.has('ArrowRight'))ix+=1;
+  if(ui.modal||ui.tut){ix=0;iy=0}
+  const L=Math.hypot(ix,iy);if(L>1){ix/=L;iy/=L}const mag=Math.min(1,L);
+  const sy=Math.sin(camS.yaw),cy=Math.cos(camS.yaw),dx=-sy*iy+cy*ix,dz=-cy*iy-sy*ix;
+  const sp=(RUN.on?7.4:5.2)*((k.has('ShiftLeft')||k.has('ShiftRight'))?1.35:1)*mag;
+  player.speed+=(sp-player.speed)*Math.min(1,dt*12);
+  if(mag>.05){const l=Math.hypot(dx,dz)||1;player.vx=dx/l;player.vz=dz/l;player.yaw+=angDiff(player.yaw,Math.atan2(dx,dz))*Math.min(1,dt*14)}
+  if(player.speed>.05)movePlayer(player.vx*player.speed*dt,player.vz*player.speed*dt);
+  player.phase+=player.speed*dt*2.2;
+  if(player.speed>1&&Math.floor(player.phase/Math.PI)!==stepPh){stepPh=Math.floor(player.phase/Math.PI);sfx.step()}
+  const sw=Math.sin(player.phase)*Math.min(1,player.speed/4)*.9,P=me.P;let jump=0;
+  if(player.cheer>0){player.cheer-=dt;jump=Math.abs(Math.sin(now/130))*.3;P.armL.rotation.x=P.armR.rotation.x=-2.7}else{P.armL.rotation.x=-sw;P.armR.rotation.x=sw}
+  P.legL.rotation.x=sw;P.legR.rotation.x=-sw;
+  me.g.position.set(player.x,jump+Math.abs(sw)*.04,player.z);me.g.rotation.y=player.yaw;
+  runFrame(dt);updateAgents(dt);updateBubbles(dt);ribbonsFrame(now);
+  // --- camera bám mượt ---
+  const foc=FX.t>0?(FX.t-=dt,{x:FX.x,z:FX.z,y:3}):{x:player.x,z:player.z,y:1.3};
+  tgt.set(foc.x,foc.y,foc.z);camLook.lerp(tgt,1-Math.exp(-dt*10));
+  const pitch=FX.t>0?.3:camS.pitch,yaw=FX.t>0?Math.PI/2-(RIB_SLOTS[0].a)+.9:camS.yaw,want=(FX.t>0?9:(innerWidth<innerHeight?13:10))*camS.zoom;
+  dirV.set(Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),Math.cos(yaw)*Math.cos(pitch));
+  const dd=want*camBlock(tgt,want);camD+=(dd-camD)*Math.min(1,dt*(dd<camD?18:3));
+  camPos.set(tgt.x+dirV.x*camD,tgt.y+dirV.y*camD,tgt.z+dirV.z*camD);camera.position.lerp(camPos,1-Math.exp(-dt*12));camera.lookAt(camLook);
+  sky.position.copy(camera.position);
+  sun.target.position.set(Math.round(player.x),0,Math.round(player.z));sun.position.set(Math.round(player.x)-26,46,Math.round(player.z)+18);
+  window.__gymRoof.visible=!(player.x>GYM.x0-.2&&player.x<GYM.x1+.2&&player.z>GYM.z0-.2&&player.z<GYM.z1+.2);
+  clouds.forEach(c=>{c.position.x+=dt*1.2;if(c.position.x>170)c.position.x=-170});window.__sea.offset.x+=dt*.006;window.__sea.offset.y+=dt*.003;
+  // --- điểm hoạt động ---
+  let nh=null,nd=3.4;
+  for(const h of HOT){const d=Math.hypot(h.x-player.x,h.z-player.z),p=1+Math.sin(now/300+h.x)*.12;h.ring.scale.setScalar(p);h.gem.rotation.y=now/500;h.gem.position.y=2.4+Math.sin(now/400+h.z)*.2;
+    h.ring.material.opacity=h.done?.3:.85;h.gem.visible=!h.done;h.beam.visible=!h.done;if(d<nd&&!RUN.on&&!ui.modal){nd=d;nh=h}}
+  setNear(nh);
+  const gtg=guideTarget(),ar=$('#arrow');
+  if(gtg&&gtg.d>5){const rx=cy,rz=-sy,fx=-sy,fz=-cy,ddx=gtg.h.x-player.x,ddz=gtg.h.z-player.z,a=Math.atan2(ddx*rx+ddz*rz,ddx*fx+ddz*fz),R=Math.min(innerWidth,innerHeight)*.3;
+    ar.hidden=false;ar.style.transform='translate('+Math.sin(a)*R+'px,'+(-Math.cos(a)*R)+'px)';ar.firstChild.style.transform='rotate('+(a-Math.PI/2)+'rad)';ar.lastChild.textContent=Math.round(gtg.d)+' m'}
+  else if(guide)ar.hidden=true;
+  // --- nhãn & tên ---
+  for(let i=0;i<LABELS.length;i++){const l=LABELS[i],d=Math.hypot(l.x-player.x,l.z-player.z),e=lblEls[i];
+    if(d>44){e.hidden=true;continue}const s=toScreen(l.x,l.y,l.z);if(!s.vis){e.hidden=true;continue}e.hidden=false;e.style.opacity=clamp((44-d)/14,0,1);e.style.transform='translate('+s.x+'px,'+s.y+'px) translate(-50%,-50%)'}
+  const ts=toScreen(player.x,2.05,player.z);tag.style.transform='translate('+ts.x+'px,'+ts.y+'px) translate(-50%,-100%)';
+  if(frames%3===0)drawMini(now);
+  if(frames%20===0)audioFrame();
+  renderer.render(scene,camera);
+}
+
+/* ---------- Màn chào → vào trường ---------- */
+const nameIn=$('#nameIn'),goBtn=$('#goBtn');
+nameIn.value=save.name;
+function enterGame(){
+  if(ui.started)return;const n=nameIn.value.replace(/\s+/g,' ').trim().slice(0,20);save.name=n||'Sinh viên NTU';persist();
+  audioStart();setMuted(AU.muted);ui.started=true;$('#splash').hidden=true;$('#hud').hidden=false;
+  tag.hidden=false;tag.textContent=save.name;updateChips();
+  const sp=save.prayers.slice(-RIB_SLOTS.length);const base=save.prayers.length-sp.length;sp.forEach((p,i)=>hangRibbon(base+i,p.text,save.name,false));
+  if(!save.seenTut)showTut();
+  lastT=performance.now();requestAnimationFrame(frame);
+}
+goBtn.addEventListener('click',enterGame);
+nameIn.addEventListener('keydown',e=>{if(e.key==='Enter')enterGame()});
+renderer.compile(scene,camera);renderer.render(scene,camera);
+goBtn.disabled=false;goBtn.textContent='Vào Trường';
+window.__ntu={player,HOT,agents,camS,ui,save,enter:enterGame};
+</script>
+</body>
+</html>
